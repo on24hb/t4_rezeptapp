@@ -1,4 +1,5 @@
 import { Application, Router } from "oak";
+import { loginHandler } from "./auth.ts";
 
 const app = new Application();
 const router = new Router();
@@ -14,6 +15,10 @@ router.get("/", (ctx) => {
   ctx.response.body = "Hallo Rezept-App!";
 });
 
+// Login-Route für POST-Anfragen
+router.post("/login", loginHandler);
+
+// App Start
 app.use(router.routes());
 app.use(router.allowedMethods());
 

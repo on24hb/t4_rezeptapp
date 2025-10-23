@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify, type JWTPayload } from "jose"; 
 import { JWT_SECRET_KEY } from "./config.ts"; 
+import { type Context } from "oak"; //
 
 // Secret Key vorbereiten (Uint8Array)
 const secretKey = new TextEncoder().encode(JWT_SECRET_KEY);
@@ -27,3 +28,45 @@ export async function verifyJWT(token: string): Promise<JWTPayload | null> {
     return null;
   }
 }
+
+// Verarbeitung von POST-Anfragen an die /login Route & Prüfung Anmeldedaten
+/** @param ctx */
+export const loginHandler = async (ctx: Context) => {
+  try {
+    if (!ctx.request.hasBody || ctx.request.headers.get("content-type")?.toLowerCase() !== "application/json") {
+      ctx.response.status = 400; 
+      ctx.response.body = { message: "Anfrage muss einen JSON Body mit username und password enthalten." };
+      return;
+    }
+
+    const body = await ctx.request.body().value; // Liest JSON Body: { username: "...", password: "..." }
+
+    if (!body || typeof body.username !== 'string' || typeof body.password !== 'string') {
+      ctx.response.status = 400; 
+      ctx.response.body = { message: "username und password müssen als Strings im JSON Body gesendet werden." };
+      return;
+    }
+
+    const { username, password } = body;
+
+    // --- Simpler Test-Login 
+    // TODO: Später ggf. durch Datenbankabfrage oder bcrypt-Vergleich ersetzen
+    if (username === "t4exam" && password === "SuperKurs") {
+      // Payload für das JWT erstellen (userId identifiziert den Benutzer eindeutig)
+      const payload = { userId: username };
+      const token = await createJWT(payload);
+
+      ctx.response.body = { token: token };
+      ctx.response.status = 200; 
+      console.log(`Benutzer '${username}' erfolgreich eingeloggt.`); // Log für Debugging
+    } else {
+      ctx.response.status = 401; 
+      ctx.response.body = { message: "Ungültiger Benutzername oder Passwort." };
+      console.warn(`Fehlgeschlagener Login-Versuch für Benutzer '${username}'.`); // Log für Debugging
+    }
+  } catch (error) {
+    console.error("Fehler im loginHandler:", error);
+    ctx.response.status = 400; 
+    ctx.response.body = { message: "Ungültige Anfrage: " + error};
+  }
+};
