@@ -1,6 +1,6 @@
 import { Application, Router, type Context } from "oak";
 import { loginHandler, jwtMiddleware } from "./auth.ts";
-import { getRecipesByUser } from "./recipe.ts";
+import { getRecipesByUser, createRecipe, type Recipe } from "./recipe.ts";
 
 const app = new Application();
 const router = new Router();
@@ -43,6 +43,56 @@ const getRecipesHandler = async (ctx: Context) => {
 };
 
 router.get("/api/recipes", jwtMiddleware, getRecipesHandler);
+
+
+// POST /api/recipes
+const createRecipeHandler = async (ctx: Context) => {
+  try {
+    const userId = ctx.state.user?.userId;
+    if (!userId || typeof userId !== 'string') {
+      ctx.response.status = 500;
+      ctx.response.body = { message: "Benutzerinformationen konnten nicht ermittelt werden." };
+      return;
+    }
+
+    if (!ctx.request.hasBody || ctx.request.headers.get("content-type")?.toLowerCase() !== "application/json") {
+      ctx.response.status = 400;
+      ctx.response.body = { message: "Anfrage muss einen JSON Body mit title, ingredients und instructions enthalten." };
+      return;
+    }
+
+    const body = await ctx.request.body().value;
+    if (
+      !body ||
+      typeof body.title !== 'string' || body.title.trim() === '' ||
+      !Array.isArray(body.ingredients) || body.ingredients.some((i: unknown) => typeof i !== 'string') || // Prüft, ob ingredients ein Array aus Strings ist
+      typeof body.instructions !== 'string' || body.instructions.trim() === ''
+    ) {
+      ctx.response.status = 400; 
+      ctx.response.body = { message: "Ungültige oder fehlende Daten. Benötigt: title (string), ingredients (string[]), instructions (string)." };
+      return;
+    }
+
+    const recipeData: Omit<Recipe, "id" | "userId"> = {
+      title: body.title.trim(),
+      ingredients: body.ingredients.map((i: string) => i.trim()).filter(Boolean), // Leere Strings entfernen
+      instructions: body.instructions.trim(),
+    };
+
+    const newRecipe = await createRecipe(userId, recipeData);
+
+    ctx.response.body = newRecipe;
+    ctx.response.status = 201;
+    console.log(`Neues Rezept '${newRecipe.title}' für Benutzer '${userId}' erstellt.`);
+
+  } catch (err) {
+    console.error("Fehler im createRecipeHandler:", err);
+    ctx.response.status = 500;
+    ctx.response.body = { message: "Fehler beim Erstellen des Rezepts: " + err.message };
+  }
+};
+
+router.post("/api/recipes", jwtMiddleware, createRecipeHandler);
 
 
 // App Start
