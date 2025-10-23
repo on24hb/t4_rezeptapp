@@ -24,3 +24,32 @@ export async function getRecipesByUser(userId: string): Promise<Recipe[]> {
 
   return recipes;
 }
+
+/**
+ * Neues Rezept erstellen und in Deno KV speichern
+ * @param userId 
+ * @param recipeData 
+ * @returns 
+ */
+export async function createRecipe(
+  userId: string,
+  recipeData: Omit<Recipe, "id" | "userId">,
+): Promise<Recipe> {
+  const kv = await Deno.openKv();
+
+  const newRecipeId = crypto.randomUUID();
+
+  const newRecipe: Recipe = {
+    id: newRecipeId,
+    userId: userId,
+    title: recipeData.title,
+    ingredients: recipeData.ingredients,
+    instructions: recipeData.instructions,
+  };
+
+  const recipeKey = ["recipes", userId, newRecipeId];
+
+  await kv.set(recipeKey, newRecipe);
+
+  return newRecipe;
+}
