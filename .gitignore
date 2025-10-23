@@ -1,0 +1,12 @@
+# Umgebungsvariablen
+.env
+
+# Abhängigkeiten
+node_modules/
+dist/ # Build-Ordner vom Frontend
+
+# Zertifikate
+*.pem
+
+# VS Code / IDE spezifisch
+.vscode/
