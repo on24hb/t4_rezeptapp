@@ -3,6 +3,12 @@ import { Application, Router } from "oak";
 const app = new Application();
 const router = new Router();
 
+// Logging Middleware 
+app.use(async (ctx, next) => {
+  console.log(`${ctx.request.method} ${ctx.request.url.pathname}`);
+  await next();
+});
+
 // Test-Route
 router.get("/", (ctx) => {
   ctx.response.body = "Hallo Rezept-App!";
@@ -13,6 +19,9 @@ app.use(router.allowedMethods());
 
 console.log("Server wird gestartet...");
 
-await app.listen({ port: 8000 });
-
-console.log("Server läuft auf http://localhost:8000");
+console.log("Server läuft auf https://localhost:8000"); 
+await app.listen({
+  port: 8000,
+  cert: await Deno.readTextFile("./localhost.pem"),
+  key: await Deno.readTextFile("./localhost-key.pem"),
+});
