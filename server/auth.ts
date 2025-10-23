@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify, type JWTPayload } from "jose"; 
 import { JWT_SECRET_KEY } from "./config.ts"; 
-import { type Context } from "oak"; //
+import { type Context, Middleware } from "oak"; //
 
 // Secret Key vorbereiten (Uint8Array)
 const secretKey = new TextEncoder().encode(JWT_SECRET_KEY);
@@ -69,4 +69,33 @@ export const loginHandler = async (ctx: Context) => {
     ctx.response.status = 400; 
     ctx.response.body = { message: "Ungültige Anfrage: " + error};
   }
+};
+
+/**
+ * Oak Middleware zur Überprüfung des JWT im Authorization Header
+ * @param ctx
+ * @param next
+ */
+export const jwtMiddleware: Middleware = async (ctx, next) => {
+  const authHeader = ctx.request.headers.get("Authorization");
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    ctx.response.status = 401; 
+    ctx.response.body = { message: "Authentifizierungstoken fehlt oder ist im falschen Format (Bearer)." };
+    return;
+  }
+
+  const token = authHeader.substring(7);
+  const payload = await verifyJWT(token);
+
+  if (!payload || !payload.userId) {
+    ctx.response.status = 401; 
+    ctx.response.body = { message: "Authentifizierungstoken ungültig, abgelaufen oder enthält keine Benutzer-ID." };
+    return;
+  }
+
+  ctx.state.user = payload; 
+  console.log("Token gültig, Benutzer:", ctx.state.user); 
+
+  await next();
 };
