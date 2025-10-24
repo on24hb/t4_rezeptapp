@@ -1,4 +1,4 @@
-import { Application, Router, type Context, type RouterContext } from "oak";
+import { Application, Router, type RouterContext } from "oak";
 import { loginHandler, jwtMiddleware } from "./auth.ts";
 import { getRecipesByUser, createRecipe, type Recipe, updateRecipe, deleteRecipe } from "./recipe.ts";
 import { type JWTPayload } from "jose";
@@ -9,6 +9,25 @@ interface AppState {
 
 const app = new Application<AppState>();
 const router = new Router();
+
+// CORS Middleware 
+app.use(async (ctx, next) => {
+  const allowedOrigins = ["http://localhost:5173", "http://127.0.0.1:5173"]; 
+  const origin = ctx.request.headers.get("Origin");
+  if (origin && allowedOrigins.includes(origin)) {
+      ctx.response.headers.set("Access-Control-Allow-Origin", origin);
+  }
+
+  ctx.response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  ctx.response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  ctx.response.headers.set("Access-Control-Allow-Credentials", "true"); // Optional, falls Cookies/Credentials nötig
+
+  if (ctx.request.method === "OPTIONS") {
+    ctx.response.status = 204; 
+  } else {
+    await next();
+  }
+});
 
 // Logging Middleware 
 app.use(async (ctx, next) => {
