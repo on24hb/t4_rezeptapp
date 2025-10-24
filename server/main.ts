@@ -1,6 +1,6 @@
 import { Application, Router, type Context, type RouterContext } from "oak";
 import { loginHandler, jwtMiddleware } from "./auth.ts";
-import { getRecipesByUser, createRecipe, type Recipe, updateRecipe } from "./recipe.ts";
+import { getRecipesByUser, createRecipe, type Recipe, updateRecipe, deleteRecipe } from "./recipe.ts";
 import { type JWTPayload } from "jose";
 
 interface AppState {
@@ -154,6 +154,40 @@ const updateRecipeHandler = async (
 };
 
 router.put("/api/recipes/:id", jwtMiddleware, updateRecipeHandler);
+
+// DELETE /api/recipes/:id
+const deleteRecipeHandler = async (
+  ctx: RouterContext<"/api/recipes/:id", { id: string }, AppState>,
+) => {
+  try {
+    const userId = ctx.state.user?.userId;
+    if (!userId) {
+      ctx.response.status = 500;
+      ctx.response.body = { message: "Benutzerinformationen konnten nicht ermittelt werden." };
+      return;
+    }
+
+    const recipeId = ctx.params.id;
+    const deleted = await deleteRecipe(userId, recipeId);
+
+    if (deleted) {
+      ctx.response.status = 204;
+      console.log(`Rezept ID '${recipeId}' für Benutzer '${userId}' gelöscht.`);
+    } else {
+      ctx.response.status = 404;
+      ctx.response.body = { message: `Rezept mit ID '${recipeId}' nicht gefunden oder Zugriff verweigert.` };
+      console.warn(`Fehlgeschlagener Lösch-Versuch für Rezept ID '${recipeId}', Benutzer '${userId}'.`);
+    }
+
+  } catch (err) {
+    console.error("Fehler im deleteRecipeHandler:", err);
+    const errorMessage = (err instanceof Error) ? err.message : String(err);
+    ctx.response.status = 500;
+    ctx.response.body = { message: "Fehler beim Löschen des Rezepts: " + errorMessage };
+  }
+};
+
+router.delete("/api/recipes/:id", jwtMiddleware, deleteRecipeHandler);
 
 
 // App Start
