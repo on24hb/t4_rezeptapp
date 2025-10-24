@@ -1,8 +1,13 @@
-import { Application, Router, type Context } from "oak";
+import { Application, Router, type Context, type RouterContext } from "oak";
 import { loginHandler, jwtMiddleware } from "./auth.ts";
-import { getRecipesByUser, createRecipe, type Recipe } from "./recipe.ts";
+import { getRecipesByUser, createRecipe, type Recipe, updateRecipe } from "./recipe.ts";
+import { type JWTPayload } from "jose";
 
-const app = new Application();
+interface AppState {
+  user?: JWTPayload & { userId: string }; 
+}
+
+const app = new Application<AppState>();
 const router = new Router();
 
 // Logging Middleware 
@@ -20,11 +25,10 @@ router.get("/", (ctx) => {
 router.post("/login", loginHandler);
 
 // GET /api/recipes
-const getRecipesHandler = async (ctx: Context) => {
+const getRecipesHandler = async (ctx: RouterContext<"/api/recipes", Record<string, never>, AppState>) => {
   try {
     const userId = ctx.state.user?.userId;
-
-    if (!userId || typeof userId !== 'string') {
+    if (!userId) {
        console.error("Fehler: userId nicht im Context State gefunden nach jwtMiddleware.");
        ctx.response.status = 500; 
        ctx.response.body = { message: "Benutzerinformationen konnten nicht ermittelt werden." };
@@ -35,10 +39,11 @@ const getRecipesHandler = async (ctx: Context) => {
 
     ctx.response.body = recipes;
     ctx.response.status = 200; 
-  } catch (error) {
-      console.error("Fehler im getRecipesHandler:", error);
-      ctx.response.status = 500;
-      ctx.response.body = { message: "Fehler beim Abrufen der Rezepte: " + err.message };
+  } catch (err) {
+    console.error("Fehler im getRecipesHandler:", err);
+    const errorMessage = (err instanceof Error) ? err.message : String(err);
+    ctx.response.status = 500;
+    ctx.response.body = { message: "Fehler beim Abrufen der Rezepte: " + errorMessage };
   }
 };
 
@@ -46,10 +51,9 @@ router.get("/api/recipes", jwtMiddleware, getRecipesHandler);
 
 
 // POST /api/recipes
-const createRecipeHandler = async (ctx: Context) => {
-  try {
+const createRecipeHandler = async (ctx: RouterContext<"/api/recipes", Record<string, never>, AppState>) => {  try {
     const userId = ctx.state.user?.userId;
-    if (!userId || typeof userId !== 'string') {
+    if (!userId) {
       ctx.response.status = 500;
       ctx.response.body = { message: "Benutzerinformationen konnten nicht ermittelt werden." };
       return;
@@ -87,12 +91,69 @@ const createRecipeHandler = async (ctx: Context) => {
 
   } catch (err) {
     console.error("Fehler im createRecipeHandler:", err);
+    const errorMessage = (err instanceof Error) ? err.message : String(err);
     ctx.response.status = 500;
-    ctx.response.body = { message: "Fehler beim Erstellen des Rezepts: " + err.message };
+    ctx.response.body = { message: "Fehler beim Erstellen des Rezepts: " + errorMessage };
   }
 };
 
 router.post("/api/recipes", jwtMiddleware, createRecipeHandler);
+
+// PUT /api/recipes/:id
+const updateRecipeHandler = async (
+  ctx: RouterContext<"/api/recipes/:id", { id: string }, AppState>, 
+) => {
+  try {
+    const userId = ctx.state.user?.userId;
+    if (!userId) { 
+      ctx.response.status = 500;
+      ctx.response.body = { message: "Benutzerinformationen konnten nicht ermittelt werden." };
+      return;
+    }
+
+    const recipeId = ctx.params.id;
+
+     if (!ctx.request.hasBody || ctx.request.headers.get("content-type")?.toLowerCase() !== "application/json") {
+       ctx.response.status = 400;
+       ctx.response.body = { message: "Anfrage muss einen JSON Body mit title, ingredients und instructions enthalten." };
+       return;
+     }
+     const body = await ctx.request.body().value;
+     if (
+       !body ||
+       typeof body.title !== 'string' || body.title.trim() === '' ||
+       !Array.isArray(body.ingredients) || body.ingredients.some((i: unknown) => typeof i !== 'string') ||
+       typeof body.instructions !== 'string' || body.instructions.trim() === ''
+     ) {
+       ctx.response.status = 400;
+       ctx.response.body = { message: "Ungültige oder fehlende Daten. Benötigt: title (string), ingredients (string[]), instructions (string)." };
+       return;
+     }
+     const updatedData: Omit<Recipe, "id" | "userId"> = {
+       title: body.title.trim(),
+       ingredients: body.ingredients.map((i: string) => i.trim()).filter(Boolean),
+       instructions: body.instructions.trim(),
+     };
+    const updatedRecipe = await updateRecipe(userId, recipeId, updatedData);
+
+    if (updatedRecipe) {
+      ctx.response.body = updatedRecipe;
+      ctx.response.status = 200;
+      console.log(`Rezept '${updatedRecipe.title}' (ID: ${recipeId}) für Benutzer '${userId}' aktualisiert.`);
+    } else {
+      ctx.response.status = 404;
+      ctx.response.body = { message: `Rezept mit ID '${recipeId}' nicht gefunden oder Zugriff verweigert.` };
+      console.warn(`Fehlgeschlagener Update-Versuch für Rezept ID '${recipeId}', Benutzer '${userId}'.`);
+    }
+  } catch (err) {
+    console.error("Fehler im updateRecipeHandler:", err);
+    const errorMessage = (err instanceof Error) ? err.message : String(err);
+    ctx.response.status = 500;
+    ctx.response.body = { message: "Fehler beim Aktualisieren des Rezepts: " + errorMessage };
+  }
+};
+
+router.put("/api/recipes/:id", jwtMiddleware, updateRecipeHandler);
 
 
 // App Start
