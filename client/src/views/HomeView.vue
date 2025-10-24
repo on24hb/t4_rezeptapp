@@ -34,12 +34,12 @@ onMounted(() => {
     <p v-if="recipeStore.isLoading">Lade Rezepte...</p>
     <p v-else-if="recipeStore.error" style="color: red;">Fehler: {{ recipeStore.error }}</p>
 
-    <ul v-else-if="recipeStore.recipes.length > 0">
-    <li v-for="recipe in recipeStore.recipes" :key="recipe.id">
-         <div class="recipe-header">
+    <div v-else-if="recipeStore.recipes.length > 0" class="recipe-grid">
+      <div v-for="recipe in recipeStore.recipes" :key="recipe.id" class="recipe-card" @click="toggleDetails(recipe.id)">
+        <div class="recipe-header">
            <h4>{{ recipe.title }}</h4>
-           <button @click="toggleDetails(recipe.id)">
-             {{ expandedRecipeId === recipe.id ? 'Schließen' : 'Details' }}
+           <button @click.stop="toggleDetails(recipe.id)">
+            {{ expandedRecipeId === recipe.id ? 'Schließen' : 'Details' }}
            </button>
          </div>
 
@@ -52,83 +52,142 @@ onMounted(() => {
            </ul>
            <h5>Anleitung:</h5>
            <p style="white-space: pre-wrap;">{{ recipe.instructions }}</p>
-           </div>
-       </li>
-     </ul>
+        </div>
+      </div>
+    </div>
     <p v-else>Du hast noch keine Rezepte erstellt.</p>
   </div>
 </template>
 
 <style scoped>
-  h3 {
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 0.5rem;
-  }
-  ul {
-    list-style: none;
-    padding: 0;
-  }
-  li {
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
-  h4 {
-    margin: 0 0 0.5rem 0;
-  }
+h2 {
+   margin-bottom: 2rem;
+   color: var(--secondary-color);
+ }
+ h3 {
+   margin-top: 2rem;
+   margin-bottom: 1.5rem;
+   border-bottom: 1px solid var(--border-color);
+   padding-bottom: 0.5rem;
+   color: var(--text-color);
+   font-weight: 600;
+   font-size: 1.3rem;
+   color: var(--primary-color);
+ }
 
-  .recipe-header {
-     display: flex;
-     justify-content: space-between;
-     align-items: center;
-     margin-bottom: 0.5rem;
-   }
-   .recipe-header h4 {
-       margin-bottom: 0;
-   }
-   .recipe-details {
-     margin-top: 1rem;
-     padding-top: 1rem;
-     border-top: 1px dashed #ccc;
-   }
-   .recipe-details h5 {
-     margin-top: 0;
-     margin-bottom: 0.5rem;
-     font-weight: bold;
-   }
-   .recipe-details ul {
-     list-style: disc;
-     padding-left: 20px;
-     margin-bottom: 1rem;
-   }
-    .recipe-details ul li {
-        background-color: transparent;
-        border: none;
-        padding: 0;
-        margin-bottom: 0.2rem;
-    }
-   .recipe-details p {
-       margin-top: 0;
-   }
-   p[style*="white-space: pre-wrap;"] {
-      white-space: pre-wrap;
-   }
+ .recipe-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+   gap: 1.5rem;
+   list-style: none;
+   padding: 0;
+   margin-bottom: 2rem;
+ }
 
-   button {
-     padding: 0.4rem 0.8rem;
-     background-color: #007bff;
-     color: white;
-     border: none;
-     border-radius: 4px;
-     cursor: pointer;
-     font-size: 0.8rem;
-     font-weight: bold;
-   }
-   button:hover {
-     background-color: #0056b3;
-  }
-</style>
+ .recipe-card {
+   background-color: var(--card-background);
+   color: var(--text-color);
+   border-radius: 6px;
+   padding: 1rem 1.2rem;
+   border: 0.5px solid var(--border-color);
+   box-shadow: var(--box-shadow);
+   transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+   cursor: pointer;
+   overflow: hidden;
+ }
+
+ .recipe-card:hover {
+   transform: translateY(-2px);
+   box-shadow: var(--box-shadow-hover);
+ }
+
+ .recipe-header {
+   display: flex;
+   align-items: center;
+   margin-bottom: 0.8rem;
+ }
+
+ .recipe-header h4 {
+   flex-grow: 1;
+   margin: 0;
+   font-size: 1.15rem;
+   font-weight: 600;
+   color: var(--text-color);
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+ }
+
+ .recipe-header button {
+   background: none;
+   border: 1px solid var(--border-color);
+   color: var(--text-light);
+   padding: 0.2rem 0.4rem;
+   font-size: 0.8rem;
+   border-radius: 4px;
+   white-space: nowrap;
+   margin-left: 0.5rem;
+   flex-shrink: 0;
+   cursor: pointer;
+ }
+ .recipe-header button:hover {
+   background-color: var(--light-gray);
+   color: var(--text-color);
+ }
+
+ .recipe-details {
+   margin-top: 0.8rem;
+   padding-top: 0.8rem;
+   border-top: 1px solid var(--border-color);
+   font-size: 0.9rem;
+ }
+
+ .recipe-details h5 {
+   margin-top: 0;
+   margin-bottom: 0.6rem;
+   color: var(--text-light);
+   font-size: 0.8rem;
+   font-weight: 600;
+   text-transform: uppercase;
+   letter-spacing: 0.5px;
+ }
+
+ .recipe-details ul {
+   list-style: none;
+   padding-left: 0;
+   margin-bottom: 1rem;
+ }
+
+ .recipe-details ul li {
+   background-color: transparent;
+   border: none;
+   padding: 0.1rem 0;
+   margin-bottom: 0;
+   line-height: 1.5;
+   color: var(--text-light);
+ }
+ .recipe-details ul li::before {
+     content: '• ';
+     color: var(--medium-gray);
+     margin-right: 0.5em;
+ }
+
+ .recipe-details p {
+   margin-top: 0;
+   line-height: 1.6;
+   white-space: pre-wrap;
+   color: var(--text-light);
+ }
+
+ .recipe-list-container > p {
+    text-align: center;
+    color: var(--text-light);
+    margin-top: 3rem;
+    font-style: italic;
+ }
+ p[style*="color: red;"] {
+    color: var(--danger-color) !important;
+    font-style: normal;
+    font-weight: 500;
+ }
+ </style>

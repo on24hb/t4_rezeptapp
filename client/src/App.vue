@@ -22,43 +22,43 @@ const authStore = useAuthStore();
 <style scoped>
 header {
   line-height: 1.5;
-  background-color: #f8f9fa;
-  padding: 0.8rem 2rem;
-  border-bottom: 1px solid #dee2e6;
+  background-color: var(--header-background);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.8rem 0;
   margin-bottom: 2rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); 
 }
 
 .header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 0 2rem;
 }
 
 header h1 {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 500;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--primary-color);
 }
 
 .logout-button {
   padding: 0.4rem 0.8rem;
-  background-color: #a32727;
+  background-color: var(--secondary-color);
   color: white;
   border: none;
   border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: bold;
+  font-size: 0.9rem;
 }
 
 .logout-button:hover {
-  background-color: #751717;
+  opacity: 0.7;
 }
 
 main {
   padding: 0 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
-
 </style>
