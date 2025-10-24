@@ -12,6 +12,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
+      // @ts-expect-error: Vite alias for '@' cannot be typed here
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },

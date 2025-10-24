@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { jwtDecode } from 'jwt-decode' // Hilfsbibliothek zum einfachen Dekodieren des Tokens
+import router from '../router/index.ts'
 
 interface JwtPayload {
   userId: string
@@ -74,10 +75,12 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Entfernt das Token aus dem State und localStorage.
    */
-  function logout() {
+ function logout() {
     token.value = null
     localStorage.removeItem('authToken')
     loginError.value = null
+    console.log('Ausgeloggt, leite zu /login weiter...') 
+    router.push({ name: 'login' })
   }
 
   // --- Return ---

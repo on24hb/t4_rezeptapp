@@ -8,6 +8,13 @@ const router = createRouter({
       name: 'login',
       // deno-lint-ignore no-local
       component: () => import('../views/LoginView.vue')
+    },
+    {
+      path: '/', 
+      name: 'home',
+      // deno-lint-ignore no-local
+      component: () => import('../views/HomeView.vue')
+      // TODO: Diese Route später schützen (nur für eingeloggte User)
     }
   ]
 })
