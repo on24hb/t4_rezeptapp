@@ -53,3 +53,39 @@ export async function createRecipe(
 
   return newRecipe;
 }
+
+/**
+ * Vorhandenes Rezept in Deno KV aktualisieren
+ * ( nur wenn es existiert und dem Benutzer gehört )
+ * @param userId 
+ * @param recipeId
+ * @param updatedData 
+ * @returns
+ */
+export async function updateRecipe(
+  userId: string,
+  recipeId: string,
+  updatedData: Omit<Recipe, "id" | "userId">,
+): Promise<Recipe | null> {
+  const kv = await Deno.openKv();
+  const recipeKey = ["recipes", userId, recipeId]; 
+
+  const updatedRecipe: Recipe = {
+    id: recipeId,
+    userId: userId,
+    title: updatedData.title,
+    ingredients: updatedData.ingredients,
+    instructions: updatedData.instructions,
+  };
+
+  const result = await kv.atomic()
+    .check({ key: recipeKey, versionstamp: null /* null bedeutet 'muss existieren' */})
+    .set(recipeKey, updatedRecipe)
+    .commit();
+
+  if (result.ok) {
+    return updatedRecipe;
+  } else {
+    return null;
+  }
+}
