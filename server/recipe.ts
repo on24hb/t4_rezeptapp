@@ -87,3 +87,22 @@ export async function updateRecipe(
   return updatedRecipe;
 }
 
+/**
+ * Rezept aus Deno KV löschen
+ * @param userId 
+ * @param recipeId 
+ * @returns 
+ */
+export async function deleteRecipe(userId: string, recipeId: string): Promise<boolean> {
+  const kv = await Deno.openKv();
+  const recipeKey = ["recipes", userId, recipeId]; 
+
+  const existingEntry = await kv.get(recipeKey); 
+
+  if (existingEntry.value === null || existingEntry.versionstamp === null) {
+    return false; 
+  }
+
+  await kv.delete(recipeKey);
+  return true;
+}
