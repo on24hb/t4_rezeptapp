@@ -56,8 +56,6 @@ onMounted(() => {
        </li>
      </ul>
     <p v-else>Du hast noch keine Rezepte erstellt.</p>
-
-    <button @click="authStore.logout()">Logout</button>
   </div>
 </template>
 
