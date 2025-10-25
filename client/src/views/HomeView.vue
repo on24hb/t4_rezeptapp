@@ -29,7 +29,12 @@ onMounted(() => {
   <div>
     <h2>Willkommen {{ authStore.userId }}!</h2>
 
-    <h3>Deine Rezepte</h3>
+    <div class="view-header">
+       <h3>Deine Rezepte</h3>
+       <router-link :to="{ name: 'create-recipe' }" class="btn-new-recipe">
+         + Neues Rezept
+       </router-link>
+     </div>
 
     <p v-if="recipeStore.isLoading">Lade Rezepte...</p>
     <p v-else-if="recipeStore.error" style="color: red;">Fehler: {{ recipeStore.error }}</p>
@@ -60,13 +65,20 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.view-header {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     margin-bottom: 1.5rem;
+     padding-bottom: 0.5rem;
+     border-bottom: 1px solid var(--border-color);
+   }
 h2 {
    margin-bottom: 2rem;
    color: var(--secondary-color);
  }
  h3 {
-   margin-top: 2rem;
-   margin-bottom: 1.5rem;
+   margin: 0rem;
    border-bottom: 1px solid var(--border-color);
    padding-bottom: 0.5rem;
    color: var(--text-color);

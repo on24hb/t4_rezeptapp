@@ -22,6 +22,13 @@ const router = createRouter({
       // deno-lint-ignore no-local
       component: () => import('../views/HomeView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/recipes/new',
+      name: 'create-recipe',
+      // deno-lint-ignore no-local
+      component: () => import('../views/CreateRecipeView.vue'),
+      meta: { requiresAuth: true } 
     }
   ]
 })
