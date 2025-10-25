@@ -129,7 +129,7 @@ export const useRecipeStore = defineStore('recipes', () => {
       error.value = null
 
       try {
-        const response = await fetch(`https://localhost:8000/api/recipes/${recipeId}`, { 
+        const response = await fetch(`https://localhost:8000/api/recipes/${recipeId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${authStore.token}`
@@ -164,6 +164,66 @@ export const useRecipeStore = defineStore('recipes', () => {
       }
     }
 
+    /**
+   * Sendet eine Update-Anfrage an das Backend und aktualisiert das Rezept in der lokalen Liste
+   * @param recipeId
+   * @param recipeData
+   * @returns
+   */
+  async function updateRecipeAction(recipeId: string, recipeData: Omit<Recipe, 'id' | 'userId'>): Promise<boolean> {
+    const authStore = useAuthStore()
+    if (!authStore.isLoggedIn || !authStore.token) {
+      error.value = 'Nicht eingeloggt. Rezept kann nicht aktualisiert werden.'
+      return false
+    }
+
+    isLoading.value = true;
+    error.value = null
+
+    try {
+      const response = await fetch(`https://localhost:8000/api/recipes/${recipeId}`, { 
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authStore.token}`
+        },
+        body: JSON.stringify(recipeData)
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          error.value = 'Sitzung abgelaufen, bitte neu einloggen.'
+          authStore.logout()
+        } else if (response.status === 404) {
+           error.value = 'Rezept nicht gefunden.'
+            // Vorsorglich lokal entfernen
+        } else {
+          const errorData = await response.json().catch(() => ({}))
+          error.value = errorData.message || `Fehler beim Aktualisieren (${response.status})`
+        }
+        isLoading.value = false;
+        return false
+      }
+
+      const updatedRecipe = await response.json() as Recipe
+      const index = recipes.value.findIndex(r => r.id === recipeId)
+      if (index !== -1) {
+        recipes.value[index] = updatedRecipe
+      } else {
+        recipes.value.unshift(updatedRecipe);
+      }
+      console.log('Rezept erfolgreich aktualisiert:', updatedRecipe)
+      return true
+
+    } catch (err) {
+      console.error('Netzwerkfehler beim Aktualisieren des Rezepts:', err)
+      error.value = 'Netzwerkfehler oder Server nicht erreichbar.'
+      return false
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   // --- Return ---
   return {
     recipes,
@@ -171,6 +231,7 @@ export const useRecipeStore = defineStore('recipes', () => {
     error,
     fetchRecipes,
     addRecipe,
-    deleteRecipeAction
+    deleteRecipeAction,
+    updateRecipeAction
   }
 })

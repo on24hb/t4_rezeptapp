@@ -1,11 +1,39 @@
 <script setup lang="ts">
 import RecipeForm from '@/components/RecipeForm.vue';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import type { Recipe } from '@/types/Recipe';
+import { useRecipeStore } from '@/stores/RecipeStore';
+
+const recipeStore = useRecipeStore();
+const router = useRouter();
+const isLoading = ref(false);
+const error = ref<string | null>(null);
+
+// Funktion, die auf das Event vom Formular reagiert
+async function handleCreate(recipeData: Omit<Recipe, 'id' | 'userId'>) {
+    isLoading.value = true;
+    error.value = null;
+    const success = await recipeStore.addRecipe(recipeData); // Store-Action aufrufen
+    isLoading.value = false;
+
+    if (success) {
+        router.push({ name: 'home' });
+    } else {
+        error.value = recipeStore.error || 'Rezept konnte nicht erstellt werden.';
+    }
+}
 </script>
 
 <template>
   <div class="create-recipe-view">
     <h2>Neues Rezept erstellen</h2>
-    <RecipeForm />
+    <RecipeForm
+    :is-loading-externally="isLoading"
+        @submit-recipe="handleCreate"
+        submit-button-text="Rezept erstellen"
+    />
+    <p v-if="error" style="color: red; text-align: center; margin-top: 1rem;">{{ error }}</p>
     <router-link :to="{ name: 'home' }">Zurück zur Übersicht</router-link>
   </div>
 </template>

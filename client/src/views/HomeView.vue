@@ -2,14 +2,14 @@
 import { onMounted, ref } from 'vue';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useRecipeStore } from '../stores/RecipeStore';
-// TODO: import { useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 
 const authStore = useAuthStore();
 const recipeStore = useRecipeStore();
 // Speichert die ID des Rezepts, das gerade angezeigt wird, oder null:
 const expandedRecipeId = ref<string | null>(null);
 
-// TODO: const router = useRouter();
+const router = useRouter();
 
 onMounted(() => {
   console.log('HomeView wurde gemountet, rufe fetchRecipes auf...');
@@ -44,9 +44,8 @@ onMounted(() => {
 
  // Funktion zum Bearbeiten eines Rezepts
  function startEdit(recipeId: string) {
-   console.log('Bearbeite Rezept:', recipeId);
-   // TODO: Zur Bearbeitungsseite navigieren
-   alert('Bearbeiten-Funktion noch nicht implementiert.');
+   console.log('Navigiere zum Bearbeiten von Rezept:', recipeId);
+   router.push({ name: 'edit-recipe', params: { id: recipeId } });
  }
 </script>
 
@@ -270,4 +269,16 @@ h2 {
     background-color: var(--danger-color);
     color: white;
  }
+
+ .btn-new-recipe {
+    display: block;
+    text-align: center;
+    margin-top: 2rem;
+    color: var(--text-light);
+    text-decoration: none;
+    font-size: 0.9rem;
+   }
+   .btn-new-recipe:hover {
+    text-decoration: underline;
+   }
  </style>

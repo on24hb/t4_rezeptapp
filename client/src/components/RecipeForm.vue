@@ -1,25 +1,54 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRecipeStore } from '../stores/RecipeStore'
-import { useRouter } from 'vue-router'
-import type { Recipe } from '../types/Recipe'
+import { ref, watch } from 'vue';
+import type { Recipe } from '../types/Recipe'; 
 
-const recipeStore = useRecipeStore()
-const router = useRouter()
+// --- Props ---
+// Werte kommen von der übergeordneten Komponente (CreateRecipeView oder EditRecipeView)
+const props = defineProps<{
+  initialData?: Recipe | null;
+  isLoadingExternally?: boolean;
+  submitButtonText?: string;
+}>();
+
+// --- Event ---
+const emit = defineEmits<{
+  (e: 'submit-recipe', data: Omit<Recipe, 'id' | 'userId'>): void;
+}>();
 
 const title = ref('')
 const ingredientsText = ref('')
 const instructions = ref('')
-const isLoading = ref(false)
+const internalLoading = ref(false);
 const error = ref<string | null>(null)
 
+function ingredientsToString(ingredients: string[] | undefined): string {
+    return ingredients ? ingredients.join('\n') : '';
+}
+
 function parseIngredients(text: string): string[] {
-  // Teilt den Text an Zeilenumbrüchen, entfernt leere Zeilen und Leerzeichen am Anfang/Ende
   return text.split('\n').map(line => line.trim()).filter(Boolean)
 }
 
+function initializeForm(data: Recipe | null | undefined) {
+    if (data) {
+        title.value = data.title;
+        ingredientsText.value = ingredientsToString(data.ingredients);
+        instructions.value = data.instructions;
+    } else {
+        title.value = '';
+        ingredientsText.value = '';
+        instructions.value = '';
+    }
+    error.value = null;
+}
+
+watch(() => props.initialData, (newData) => {
+    console.log('RecipeForm: initialData received or changed:', newData); // Zum Debuggen
+    initializeForm(newData);
+}, { immediate: true });
+
 async function handleSubmit() {
-  isLoading.value = true
+  internalLoading.value = true
   error.value = null
 
   const ingredientsArray = parseIngredients(ingredientsText.value)
@@ -27,25 +56,19 @@ async function handleSubmit() {
   // Einfache Validierung
   if (!title.value || ingredientsArray.length === 0 || !instructions.value) {
     error.value = 'Bitte fülle alle Felder aus.'
-    isLoading.value = false
-    return
+    internalLoading.value = false
+    return;
   }
 
   // Datenobjekt für das neue Rezept
   const recipeData: Omit<Recipe, 'id' | 'userId'> = {
     title: title.value,
     ingredients: ingredientsArray,
-    instructions: instructions.value
+    instructions: instructions.value.trim()
   }
 
-  const success = await recipeStore.addRecipe(recipeData)
-  isLoading.value = false
-
-  if (success) {
-    router.push({ name: 'home' })
-  } else {
-    error.value = recipeStore.error || 'Rezept konnte nicht gespeichert werden.'
-  }
+  emit('submit-recipe', recipeData);
+  setTimeout(() => { internalLoading.value = false; }, 1000);
 }
 </script>
 
@@ -53,23 +76,23 @@ async function handleSubmit() {
   <form @submit.prevent="handleSubmit">
     <div class="form-group">
       <label for="title">Titel:</label>
-      <input type="text" id="title" v-model="title" required :disabled="isLoading" />
+      <input type="text" id="title" v-model="title" required :disabled="props.isLoadingExternally" />
     </div>
 
     <div class="form-group">
       <label for="ingredients">Zutaten (pro Zeile eine Zutat):</label>
-      <textarea id="ingredients" v-model="ingredientsText" rows="5" required :disabled="isLoading"></textarea>
+      <textarea id="ingredients" v-model="ingredientsText" rows="5" required :disabled="props.isLoadingExternally" ></textarea>
     </div>
 
     <div class="form-group">
       <label for="instructions">Anleitung:</label>
-      <textarea id="instructions" v-model="instructions" rows="8" required :disabled="isLoading"></textarea>
+      <textarea id="instructions" v-model="instructions" rows="8" required :disabled="props.isLoadingExternally" ></textarea>
     </div>
 
     <p v-if="error" class="error-message">{{ error }}</p>
 
-    <button type="submit" :disabled="isLoading">
-      {{ isLoading ? 'Speichern...' : 'Rezept speichern' }}
+    <button type="submit" :disabled="props.isLoadingExternally" >
+    {{ (props.isLoadingExternally || internalLoading) ? 'Speichern...' : (props.submitButtonText || 'Speichern') }}
     </button>
   </form>
 </template>
@@ -122,5 +145,6 @@ button:hover:not(:disabled) {
   margin-top: -0.5rem;
   margin-bottom: 1rem;
   font-size: 0.9rem;
+  text-align: center;
 }
 </style>
