@@ -26,7 +26,7 @@ header {
   border-bottom: 1px solid var(--border-color);
   padding: 0.8rem 0;
   margin-bottom: 2rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); 
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .header-content {
@@ -53,7 +53,7 @@ header h1 {
 }
 
 .logout-button:hover {
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 main {

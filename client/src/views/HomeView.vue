@@ -2,13 +2,14 @@
 import { onMounted, ref } from 'vue';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useRecipeStore } from '../stores/RecipeStore';
+// TODO: import { useRouter } from 'vue-router';
 
 const authStore = useAuthStore();
-
 const recipeStore = useRecipeStore();
+// Speichert die ID des Rezepts, das gerade angezeigt wird, oder null:
+const expandedRecipeId = ref<string | null>(null);
 
-// Speichert die ID des Rezepts, das gerade angezeigt wird, oder null
- const expandedRecipeId = ref<string | null>(null);
+// TODO: const router = useRouter();
 
 onMounted(() => {
   console.log('HomeView wurde gemountet, rufe fetchRecipes auf...');
@@ -23,6 +24,30 @@ onMounted(() => {
      expandedRecipeId.value = recipeId;
    }
  }
+
+ // Funktion zum Löschen eines Rezepts
+ async function handleDelete(recipeId: string, recipeTitle: string) {
+   if (confirm(`Möchtest du das Rezept "${recipeTitle}" wirklich löschen?`)) {
+     console.log('Lösche Rezept:', recipeId);
+     const success = await recipeStore.deleteRecipeAction(recipeId);
+     if (success) {
+       console.log('Rezept erfolgreich gelöscht.');
+       // Details schließen, falls sie offen waren
+       if (expandedRecipeId.value === recipeId) {
+         expandedRecipeId.value = null;
+       }
+     } else {
+       alert(`Fehler beim Löschen: ${recipeStore.error || 'Unbekannter Fehler'}`);
+     }
+   }
+ }
+
+ // Funktion zum Bearbeiten eines Rezepts
+ function startEdit(recipeId: string) {
+   console.log('Bearbeite Rezept:', recipeId);
+   // TODO: Zur Bearbeitungsseite navigieren
+   alert('Bearbeiten-Funktion noch nicht implementiert.');
+ }
 </script>
 
 <template>
@@ -36,6 +61,7 @@ onMounted(() => {
        </router-link>
      </div>
 
+    <div class="recipe-list-container">
     <p v-if="recipeStore.isLoading">Lade Rezepte...</p>
     <p v-else-if="recipeStore.error" style="color: red;">Fehler: {{ recipeStore.error }}</p>
 
@@ -57,11 +83,20 @@ onMounted(() => {
            </ul>
            <h5>Anleitung:</h5>
            <p style="white-space: pre-wrap;">{{ recipe.instructions }}</p>
+           <div class="recipe-actions">
+            <button @click.stop="startEdit(recipe.id)" class="btn-edit">
+              Bearbeiten
+            </button>
+            <button @click.stop="handleDelete(recipe.id, recipe.title)" class="btn-delete">
+              Löschen
+            </button>
+          </div>
         </div>
       </div>
     </div>
     <p v-else>Du hast noch keine Rezepte erstellt.</p>
   </div>
+</div>
 </template>
 
 <style scoped>
@@ -201,5 +236,38 @@ h2 {
     color: var(--danger-color) !important;
     font-style: normal;
     font-weight: 500;
+ }
+
+ .recipe-actions {
+   margin-top: 1rem;
+   display: flex;
+   gap: 0.5rem;
+ }
+
+ .recipe-actions button {
+   padding: 0.3rem 0.5rem;
+   font-size: 0.85rem;
+   border-radius: 4px;
+   cursor: pointer;
+ }
+
+ .btn-edit {
+   background-color: transparent;
+   color: var(--secondary-color);
+   border: 1px solid var(--secondary-color);
+ }
+ .btn-edit:hover {
+    background-color: var(--secondary-color);
+    color: white;
+ }
+
+ .btn-delete {
+   background-color: transparent;
+   color: var(--danger-color);
+   border: 1px solid var(--danger-color);
+ }
+ .btn-delete:hover {
+    background-color: var(--danger-color);
+    color: white;
  }
  </style>

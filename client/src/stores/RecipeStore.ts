@@ -113,12 +113,64 @@ export const useRecipeStore = defineStore('recipes', () => {
     }
   }
 
+  /**
+     * Sendet eine Löschanfrage an das Backend und entfernt das Rezept aus der lokalen Liste
+     * @param recipeId
+     * @returns
+     */
+    async function deleteRecipeAction(recipeId: string): Promise<boolean> {
+      const authStore = useAuthStore() // Zugriff auf den AuthStore
+      if (!authStore.isLoggedIn || !authStore.token) {
+        error.value = 'Nicht eingeloggt. Rezept kann nicht gelöscht werden.'
+        return false
+      }
+
+      isLoading.value = true;
+      error.value = null
+
+      try {
+        const response = await fetch(`https://localhost:8000/api/recipes/${recipeId}`, { 
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${authStore.token}`
+          }
+        })
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            error.value = 'Sitzung abgelaufen, bitte neu einloggen.'
+            authStore.logout()
+          } else if (response.status === 404) {
+            error.value = 'Rezept nicht gefunden oder bereits gelöscht.'
+            // Vorsorglich lokal entfernen
+            recipes.value = recipes.value.filter(recipe => recipe.id !== recipeId);
+          } else {
+            const errorData = await response.json().catch(() => ({}))
+            error.value = errorData.message || `Fehler beim Löschen (${response.status})`
+          }
+          return false
+        }
+
+        recipes.value = recipes.value.filter(recipe => recipe.id !== recipeId) // Rezept aus lokaler Liste entfernen
+        console.log(`Rezept ${recipeId} lokal entfernt.`)
+        return true
+
+      } catch (err) {
+        console.error('Netzwerkfehler beim Löschen des Rezepts:', err)
+        error.value = 'Netzwerkfehler oder Server nicht erreichbar.'
+        return false
+      } finally {
+        isLoading.value = false;
+      }
+    }
+
   // --- Return ---
   return {
     recipes,
     isLoading,
     error,
     fetchRecipes,
-    addRecipe
+    addRecipe,
+    deleteRecipeAction
   }
 })
