@@ -62,11 +62,63 @@ export const useRecipeStore = defineStore('recipes', () => {
     }
   }
 
+  /**
+   * Sendet ein neues Rezept an das Backend und fügt es zur lokalen Liste hinzu.
+   * @param recipeData
+   * @returns
+   */
+  async function addRecipe(recipeData: Omit<Recipe, 'id' | 'userId'>): Promise<boolean> {
+    const authStore = useAuthStore()
+    if (!authStore.isLoggedIn || !authStore.token) {
+      error.value = 'Nicht eingeloggt. Rezept kann nicht gespeichert werden.'
+      return false
+    }
+
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const response = await fetch('https://localhost:8000/api/recipes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authStore.token}`
+        },
+        body: JSON.stringify(recipeData)
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          error.value = 'Sitzung abgelaufen, bitte neu einloggen.'
+          authStore.logout()
+        } else {
+          const errorData = await response.json().catch(() => ({}))
+          error.value = errorData.message || `Fehler beim Speichern (${response.status})`
+        }
+        isLoading.value = false
+        return false
+      }
+
+      const newRecipe = await response.json() as Recipe
+      recipes.value.unshift(newRecipe)
+      console.log('Rezept erfolgreich gespeichert:', newRecipe)
+      return true
+
+    } catch (err) {
+      console.error('Netzwerkfehler beim Speichern des Rezepts:', err)
+      error.value = 'Netzwerkfehler oder Server nicht erreichbar.'
+      return false
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   // --- Return ---
   return {
     recipes,
     isLoading,
     error,
-    fetchRecipes
+    fetchRecipes,
+    addRecipe
   }
 })

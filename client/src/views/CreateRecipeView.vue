@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import RecipeForm from '@/components/RecipeForm.vue';
 </script>
 
 <template>
   <div class="create-recipe-view">
     <h2>Neues Rezept erstellen</h2>
     <RecipeForm />
-    <p><i>(Formular)</i></p>
     <router-link :to="{ name: 'home' }">Zurück zur Übersicht</router-link>
   </div>
 </template>
