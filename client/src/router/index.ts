@@ -35,9 +35,17 @@ const router = createRouter({
       name: 'edit-recipe',
       // deno-lint-ignore no-local
       component: () => import('../views/EditRecipeView.vue'),
-      meta: { requiresAuth: true }, 
+      meta: { requiresAuth: true },
       props: true // Erlaubt, dass die Route-Parameter (:id) als Props an die Komponente übergeben werden
-    }
+    },
+    {
+    path: '/recipes/:id', // Nimmt ID als Parameter
+    name: 'recipe-detail',
+    // deno-lint-ignore no-local
+    component: () => import('../views/RecipeDetailView.vue'), // Diese View erstellen wir gleich
+    meta: { requiresAuth: true }, // Geschützt
+    props: true // Übergibt :id als Prop
+  }
   ]
 })
 

@@ -41,7 +41,7 @@ async function handleUpdate(updatedData: Omit<Recipe, "id" | "userId">) {
     const success = await recipeStore.updateRecipeAction(props.id, updatedData);
 
     if (success) {
-        router.push({ name: 'home' });
+        router.push({ name: 'recipe-detail' });
     } else {
         error.value = recipeStore.error || 'Rezept konnte nicht aktualisiert werden.';
     }
@@ -64,7 +64,7 @@ async function handleUpdate(updatedData: Omit<Recipe, "id" | "userId">) {
       submit-button-text="Änderungen speichern"
     />
 
-    <router-link :to="{ name: 'home' }">Abbrechen</router-link>
+    <router-link :to="{ name: 'recipe-detail' }">Abbrechen</router-link>
   </div>
 </template>
 
