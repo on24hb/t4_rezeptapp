@@ -12,7 +12,7 @@ const router = new Router();
 
 // CORS Middleware 
 app.use(async (ctx, next) => {
-  const allowedOrigins = ["http://localhost:5173", "http://127.0.0.1:5173"]; 
+  const allowedOrigins = ["https://localhost:5173", "https://127.0.0.1:5173"]; 
   const origin = ctx.request.headers.get("Origin");
   if (origin && allowedOrigins.includes(origin)) {
       ctx.response.headers.set("Access-Control-Allow-Origin", origin);
