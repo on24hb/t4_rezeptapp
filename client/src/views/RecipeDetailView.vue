@@ -70,8 +70,7 @@ watch(() => route.params.id, (newId) => {
 
 <template>
   <div class="recipe-detail-view">
-    <button @click="router.back()" class="btn-back">&larr; Zurück</button>
-
+    <router-link :to="{ name: 'home' }" class="btn-back">&larr; Zurück</router-link>
     <div v-if="isLoading">Lade Rezept...</div>
     <div v-else-if="error" style="color: red;">Fehler: {{ error }}</div>
 
