@@ -55,6 +55,7 @@ watch(() => route.params.id, (newId) => {
      const success = await recipeStore.deleteRecipeAction(recipeId);
      if (success) {
        console.log('Rezept erfolgreich gelöscht.');
+       router.push({ name: 'home'});
      } else {
        alert(`Fehler beim Löschen: ${recipeStore.error || 'Unbekannter Fehler'}`);
      }
