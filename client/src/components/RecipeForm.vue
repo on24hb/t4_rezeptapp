@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import type { Recipe } from '../types/Recipe'; 
+import type { Recipe } from '../types/Recipe';
+import { availableTags, type TagName } from '@/config/tags';
 
 // --- Props ---
 // Werte kommen von der übergeordneten Komponente (CreateRecipeView oder EditRecipeView)
@@ -20,6 +21,7 @@ const ingredientsText = ref('')
 const instructions = ref('')
 const internalLoading = ref(false);
 const error = ref<string | null>(null)
+const selectedTags = ref<TagName[]>([]);
 
 function ingredientsToString(ingredients: string[] | undefined): string {
     return ingredients ? ingredients.join('\n') : '';
@@ -34,10 +36,11 @@ function initializeForm(data: Recipe | null | undefined) {
         title.value = data.title;
         ingredientsText.value = ingredientsToString(data.ingredients);
         instructions.value = data.instructions;
-    } else {
+        selectedTags.value = data.tags ? [...data.tags] as TagName[] : [];    } else {
         title.value = '';
         ingredientsText.value = '';
         instructions.value = '';
+        selectedTags.value = [];
     }
     error.value = null;
 }
@@ -51,7 +54,7 @@ async function handleSubmit() {
   internalLoading.value = true
   error.value = null
 
-  const ingredientsArray = parseIngredients(ingredientsText.value)
+  const ingredientsArray = parseIngredients(ingredientsText.value);
 
   // Einfache Validierung
   if (!title.value || ingredientsArray.length === 0 || !instructions.value) {
@@ -64,7 +67,8 @@ async function handleSubmit() {
   const recipeData: Omit<Recipe, 'id' | 'userId'> = {
     title: title.value,
     ingredients: ingredientsArray,
-    instructions: instructions.value.trim()
+    instructions: instructions.value.trim(),
+    tags: selectedTags.value
   }
 
   emit('submit-recipe', recipeData);
@@ -87,6 +91,24 @@ async function handleSubmit() {
     <div class="form-group">
       <label for="instructions">Anleitung:</label>
       <textarea id="instructions" v-model="instructions" rows="8" required :disabled="props.isLoadingExternally" ></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Tags auswählen:</label>
+      <div class="tag-checkbox-group">
+        <div v-for="tagOption in availableTags" :key="tagOption.name" class="tag-checkbox-item">
+          <input
+            type="checkbox"
+            :id="'tag-' + tagOption.name"
+            :value="tagOption.name"
+            v-model="selectedTags"
+            :disabled="props.isLoadingExternally || internalLoading"
+          />
+          <label :for="'tag-' + tagOption.name" class="tag-label" :class="tagOption.colorClass">
+            {{ tagOption.name }}
+          </label>
+        </div>
+      </div>
     </div>
 
     <p v-if="error" class="error-message">{{ error }}</p>
@@ -147,4 +169,44 @@ button:hover:not(:disabled) {
   font-size: 0.9rem;
   text-align: center;
 }
+.tag-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 0.5rem;
+}
+.tag-checkbox-item {
+  display: flex;
+  align-items: center;
+}
+.tag-checkbox-item input[type="checkbox"] {
+  opacity: 0;
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+.tag-label {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  line-height: 1.4;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+.tag-checkbox-item input[type="checkbox"]:checked + .tag-label {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.301);
+  font-weight: 500;
+}
+.tag-checkbox-item input[type="checkbox"]:not(:checked) + .tag-label:hover {
+    opacity: 0.8;
+}
+
+.tag-color-1 { background-color: var(--tag-color-1-bg); color: var(--tag-color-1-text); border-color: var(--tag-color-1-text); }
+.tag-color-2 { background-color: var(--tag-color-2-bg); color: var(--tag-color-2-text); border-color: var(--tag-color-2-text); }
+.tag-color-3 { background-color: var(--tag-color-3-bg); color: var(--tag-color-3-text); border-color: var(--tag-color-3-text); }
+.tag-color-4 { background-color: var(--tag-color-4-bg); color: var(--tag-color-4-text); border-color: var(--tag-color-4-text); }
+.tag-color-5 { background-color: var(--tag-color-5-bg); color: var(--tag-color-5-text); border-color: var(--tag-color-5-text); }
+.tag-color-6 { background-color: var(--tag-color-6-bg); color: var(--tag-color-6-text); border-color: var(--tag-color-6-text); }
 </style>

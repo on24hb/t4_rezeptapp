@@ -2,6 +2,7 @@
 import { onMounted } from 'vue';
 import { useAuthStore } from '@/stores/AuthStore';
 import { useRecipeStore } from '../stores/RecipeStore';
+import RecipeTags from '../components/RecipeTags.vue';
 
 const authStore = useAuthStore();
 const recipeStore = useRecipeStore();
@@ -38,6 +39,7 @@ onMounted(() => {
         <div class="recipe-header">
            <h4>{{ recipe.title }}</h4>
         </div>
+        <RecipeTags :tags="recipe.tags" />
        </div>
       </router-link>
     </div>
@@ -114,7 +116,7 @@ h2 {
  .recipe-header {
    display: flex;
    align-items: center;
-   margin-bottom: 0;
+   margin-bottom: 0.8rem;
    min-height: auto;
  }
 

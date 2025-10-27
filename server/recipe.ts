@@ -4,7 +4,7 @@ export interface Recipe {
   title: string; 
   ingredients: string[]; 
   instructions: string; 
-  // TODO: später eitere Felder wie 'category', 'duration', 'createdAt' hinzufügen
+  tags?: string[];
 }
 
 /**
@@ -45,6 +45,7 @@ export async function createRecipe(
     title: recipeData.title,
     ingredients: recipeData.ingredients,
     instructions: recipeData.instructions,
+    tags: recipeData.tags || [],
   };
 
   const recipeKey = ["recipes", userId, newRecipeId];
@@ -81,6 +82,7 @@ export async function updateRecipe(
     title: updatedData.title,
     ingredients: updatedData.ingredients,
     instructions: updatedData.instructions,
+    tags: updatedData.tags || [],
   };
 
   await kv.set(recipeKey, updatedRecipe);

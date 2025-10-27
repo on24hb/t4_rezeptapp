@@ -85,6 +85,20 @@ const createRecipeHandler = async (ctx: RouterContext<"/api/recipes", Record<str
     }
 
     const body = await ctx.request.body().value;
+
+    // Validierung für Tags 
+    const tagsFromBody = body.tags;
+    let validatedTags: string[] = []; 
+    if (tagsFromBody !== undefined) { // Nur prüfen, wenn 'tags' gesendet wurde
+        if (!Array.isArray(tagsFromBody) || !tagsFromBody.every((t: unknown) => typeof t === 'string')) {
+            ctx.response.status = 400;
+            ctx.response.body = { message: "Ungültige Daten: 'tags' muss ein Array aus Strings sein." };
+            return;
+        }
+        validatedTags = tagsFromBody.map((t: string) => t.trim()).filter(Boolean);
+    }
+
+    // Validierung der Pflichtfelder
     if (
       !body ||
       typeof body.title !== 'string' || body.title.trim() === '' ||
@@ -100,6 +114,7 @@ const createRecipeHandler = async (ctx: RouterContext<"/api/recipes", Record<str
       title: body.title.trim(),
       ingredients: body.ingredients.map((i: string) => i.trim()).filter(Boolean), // Leere Strings entfernen
       instructions: body.instructions.trim(),
+      tags: validatedTags,
     };
 
     const newRecipe = await createRecipe(userId, recipeData);
@@ -138,6 +153,20 @@ const updateRecipeHandler = async (
        return;
      }
      const body = await ctx.request.body().value;
+
+     // Validierung für Tags 
+    const tagsFromBody = body.tags;
+    let validatedTags: string[] = []; 
+    if (tagsFromBody !== undefined) { // Nur prüfen, wenn 'tags' gesendet wurde
+        if (!Array.isArray(tagsFromBody) || !tagsFromBody.every((t: unknown) => typeof t === 'string')) {
+            ctx.response.status = 400;
+            ctx.response.body = { message: "Ungültige Daten: 'tags' muss ein Array aus Strings sein." };
+            return;
+        }
+        validatedTags = tagsFromBody.map((t: string) => t.trim()).filter(Boolean);
+    }
+    
+    // Validierung der Pflichtfelder
      if (
        !body ||
        typeof body.title !== 'string' || body.title.trim() === '' ||
@@ -152,6 +181,7 @@ const updateRecipeHandler = async (
        title: body.title.trim(),
        ingredients: body.ingredients.map((i: string) => i.trim()).filter(Boolean),
        instructions: body.instructions.trim(),
+       tags: validatedTags,
      };
     const updatedRecipe = await updateRecipe(userId, recipeId, updatedData);
 

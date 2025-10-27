@@ -3,6 +3,7 @@ import { ref, onMounted, watch } from 'vue';
 import { useRecipeStore } from '@/stores/RecipeStore';
 import type { Recipe } from '@/types/Recipe';
 import { useRoute, useRouter } from 'vue-router';
+import RecipeTags from '../components/RecipeTags.vue';
 
 const props = defineProps<{
   id: string;
@@ -90,7 +91,7 @@ watch(() => route.params.id, (newId) => {
         <h3>Anleitung</h3>
         <p style="white-space: pre-wrap;">{{ recipe.instructions }}</p>
       </section>
-
+      <RecipeTags :tags="recipe.tags" />
       <div class="actions-footer">
         <button @click.stop="startEdit(recipe.id)" class="btn-edit">
           Bearbeiten
