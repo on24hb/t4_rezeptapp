@@ -202,11 +202,4 @@ button:hover:not(:disabled) {
 .tag-checkbox-item input[type="checkbox"]:not(:checked) + .tag-label:hover {
     opacity: 0.8;
 }
-
-.tag-color-1 { background-color: var(--tag-color-1-bg); color: var(--tag-color-1-text); border-color: var(--tag-color-1-text); }
-.tag-color-2 { background-color: var(--tag-color-2-bg); color: var(--tag-color-2-text); border-color: var(--tag-color-2-text); }
-.tag-color-3 { background-color: var(--tag-color-3-bg); color: var(--tag-color-3-text); border-color: var(--tag-color-3-text); }
-.tag-color-4 { background-color: var(--tag-color-4-bg); color: var(--tag-color-4-text); border-color: var(--tag-color-4-text); }
-.tag-color-5 { background-color: var(--tag-color-5-bg); color: var(--tag-color-5-text); border-color: var(--tag-color-5-text); }
-.tag-color-6 { background-color: var(--tag-color-6-bg); color: var(--tag-color-6-text); border-color: var(--tag-color-6-text); }
 </style>

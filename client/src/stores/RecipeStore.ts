@@ -246,24 +246,30 @@ export const useRecipeStore = defineStore('recipes', () => {
   }
 
   /**
-   * Fügt einen Tag-Filter hinzu oder entfernt ihn, wenn er bereits aktiv ist.
-   * @param tagName
-   */
-  function toggleTagFilter(tagName: string) {
-    const index = activeTagFilters.value.indexOf(tagName)
-
-    if (index === -1) {
-      activeTagFilters.value.push(tagName)
-    } else {
-      activeTagFilters.value.splice(index, 1)
+     * Fügt einen Tag-Filter hinzu, WENN er noch nicht aktiv ist.
+     * @param tagName
+     */
+    function addTagFilter(tagName: string) {
+      if (tagName && !activeTagFilters.value.includes(tagName)) {
+        activeTagFilters.value.push(tagName);
+      }
+      console.log('Aktive Filter:', activeTagFilters.value);
     }
-    console.log('Aktive Filter:', activeTagFilters.value)
-  }
 
-  function clearTagFilters() {
-    activeTagFilters.value = []
-    console.log('Filter zurückgesetzt');
-  }
+  /**
+     * Entfernt einen spezifischen Tag-Filter.
+     * @param tagName
+     */
+    function removeTagFilter(tagName: string) {
+      activeTagFilters.value = activeTagFilters.value.filter(t => t !== tagName);
+      console.log('Aktive Filter:', activeTagFilters.value);
+    }
+
+  // Setzt alle aktiven Tag-Filter zurück.
+    function clearTagFilters() {
+      activeTagFilters.value = []
+      console.log('Filter zurückgesetzt');
+    }
 
   // --- Return ---
   return {
@@ -276,7 +282,8 @@ export const useRecipeStore = defineStore('recipes', () => {
     updateRecipeAction,
     activeTagFilters,
     filteredRecipes,
-    toggleTagFilter,
+    addTagFilter,
+    removeTagFilter,
     clearTagFilters
   }
 })

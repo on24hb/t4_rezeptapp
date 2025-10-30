@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { getTagColorClassByName } from '@/config/tags'; 
+import { getTagColorClassByName } from '@/config/tags';
 
 const props = defineProps<{
   tags?: string[];
@@ -25,17 +25,7 @@ const hasTags = computed(() => props.tags && props.tags.length > 0);
 
 <style scoped>
 .recipe-tags {
-  margin-bottom: 0.8rem;
-}
-
-.tag {
-  display: inline-block;
-  padding: 0.2rem 0.6rem;
-  font-size: 0.75rem;
-  border-radius: 4px;
-  line-height: 1.4;
-  margin-right: 0.4rem;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.6rem;
 }
 
 .tag-color-1 { background-color: var(--tag-color-1-bg); color: var(--tag-color-1-text); }
