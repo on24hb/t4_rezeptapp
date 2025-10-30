@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuthStore } from './AuthStore.ts'
 import type { Recipe } from '../types/Recipe.ts'
 
@@ -8,6 +8,27 @@ export const useRecipeStore = defineStore('recipes', () => {
   const recipes = ref<Recipe[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  const activeTagFilters = ref<string[]>([])
+
+  // --- Getters ---
+  /**
+   * Ein Getter, der die Rezeptliste basierend auf den aktiven Filtern berechnet
+   */
+  const filteredRecipes = computed(() => {
+    if (activeTagFilters.value.length === 0) {
+      return recipes.value
+    }
+    // Wenn Filter aktiv sind, filtere die Liste
+    return recipes.value.filter(recipe => {
+      // Prüfe, ob das Rezept überhaupt Tags hat
+      if (!recipe.tags || recipe.tags.length === 0) {
+        return false
+      }
+      return activeTagFilters.value.every(filterTag =>
+        recipe.tags?.includes(filterTag)
+      )
+    })
+  })
 
   // --- Actions ---
 
@@ -181,7 +202,7 @@ export const useRecipeStore = defineStore('recipes', () => {
     error.value = null
 
     try {
-      const response = await fetch(`https://localhost:8000/api/recipes/${recipeId}`, { 
+      const response = await fetch(`https://localhost:8000/api/recipes/${recipeId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -224,6 +245,26 @@ export const useRecipeStore = defineStore('recipes', () => {
     }
   }
 
+  /**
+   * Fügt einen Tag-Filter hinzu oder entfernt ihn, wenn er bereits aktiv ist.
+   * @param tagName
+   */
+  function toggleTagFilter(tagName: string) {
+    const index = activeTagFilters.value.indexOf(tagName)
+
+    if (index === -1) {
+      activeTagFilters.value.push(tagName)
+    } else {
+      activeTagFilters.value.splice(index, 1)
+    }
+    console.log('Aktive Filter:', activeTagFilters.value)
+  }
+
+  function clearTagFilters() {
+    activeTagFilters.value = []
+    console.log('Filter zurückgesetzt');
+  }
+
   // --- Return ---
   return {
     recipes,
@@ -232,6 +273,10 @@ export const useRecipeStore = defineStore('recipes', () => {
     fetchRecipes,
     addRecipe,
     deleteRecipeAction,
-    updateRecipeAction
+    updateRecipeAction,
+    activeTagFilters,
+    filteredRecipes,
+    toggleTagFilter,
+    clearTagFilters
   }
 })
