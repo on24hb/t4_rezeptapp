@@ -49,20 +49,27 @@ export const loginHandler = async (ctx: Context) => {
 
     const { username, password } = body;
 
-    // --- Simpler Test-Login 
-    // TODO: Später ggf. durch Datenbankabfrage oder bcrypt-Vergleich ersetzen
+    let validUser = false;
+    let userIdForToken = "";
+
     if (username === "t4exam" && password === "SuperKurs") {
+      validUser = true;
+      userIdForToken = "t4exam";
+    } else if (username === "t4tester2" && password === "TollerKurs") { 
+      validUser = true;
+      userIdForToken = "t4tester2";
+    }
       // Payload für das JWT erstellen (userId identifiziert den Benutzer eindeutig)
+      if (validUser) {
       const payload = { userId: username };
       const token = await createJWT(payload);
-
       ctx.response.body = { token: token };
       ctx.response.status = 200; 
-      console.log(`Benutzer '${username}' erfolgreich eingeloggt.`); // Log für Debugging
+      console.log(`Benutzer '${username}' erfolgreich eingeloggt.`); 
     } else {
       ctx.response.status = 401; 
       ctx.response.body = { message: "Ungültiger Benutzername oder Passwort." };
-      console.warn(`Fehlgeschlagener Login-Versuch für Benutzer '${username}'.`); // Log für Debugging
+      console.warn(`Fehlgeschlagener Login-Versuch für Benutzer '${username}'.`); 
     }
   } catch (error) {
     console.error("Fehler im loginHandler:", error);
