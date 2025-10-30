@@ -19,7 +19,7 @@ import LoginForm from '../components/LoginForm.vue'
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 h2 {
-    text-align: center;
-    margin-bottom: 1.5rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
 }
 </style>

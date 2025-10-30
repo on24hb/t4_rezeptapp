@@ -1,80 +1,82 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
-import { useRecipeStore } from '@/stores/RecipeStore';
-import type { Recipe } from '@/types/Recipe';
-import { useRoute, useRouter } from 'vue-router';
-import RecipeTags from '../components/RecipeTags.vue';
+import { ref, onMounted, watch } from 'vue'
+import { useRecipeStore } from '@/stores/RecipeStore'
+import type { Recipe } from '@/types/Recipe'
+import { useRoute, useRouter } from 'vue-router'
+import RecipeTags from '../components/RecipeTags.vue'
 
 const props = defineProps<{
-  id: string;
-}>();
+  id: string
+}>()
 
-const recipeStore = useRecipeStore();
-const route = useRoute();
-const router = useRouter();
+const recipeStore = useRecipeStore()
+const route = useRoute()
+const router = useRouter()
 
-const recipe = ref<Recipe | null>(null);
-const isLoading = ref(true);
-const error = ref<string | null>(null);
+const recipe = ref<Recipe | null>(null)
+const isLoading = ref(true)
+const error = ref<string | null>(null)
 
 // Funktion zum Laden/Finden des Rezepts
 async function loadRecipe() {
-    isLoading.value = true;
-    error.value = null;
-    try {
-        if (recipeStore.recipes.length === 0 && !recipeStore.isLoading && !recipeStore.error) {
-            await recipeStore.fetchRecipes();
-        }
-        const foundRecipe = recipeStore.recipes.find(r => r.id === props.id);
-        if (foundRecipe) {
-            recipe.value = foundRecipe;
-        } else {
-            error.value = `Rezept mit ID ${props.id} nicht gefunden.`;
-        }
-   } catch (err) {
-        console.error("Fehler beim Laden:", err);
-        error.value = recipeStore.error || 'Fehler beim Laden des Rezepts.';
-      } finally {
-        isLoading.value = false;
+  isLoading.value = true
+  error.value = null
+  try {
+    if (recipeStore.recipes.length === 0 && !recipeStore.isLoading && !recipeStore.error) {
+      await recipeStore.fetchRecipes()
     }
+    const foundRecipe = recipeStore.recipes.find((r) => r.id === props.id)
+    if (foundRecipe) {
+      recipe.value = foundRecipe
+    } else {
+      error.value = `Rezept mit ID ${props.id} nicht gefunden.`
+    }
+  } catch (err) {
+    console.error('Fehler beim Laden:', err)
+    error.value = recipeStore.error || 'Fehler beim Laden des Rezepts.'
+  } finally {
+    isLoading.value = false
+  }
 }
 
-onMounted(loadRecipe);
+onMounted(loadRecipe)
 
 // Beobachte ID-Änderung
-watch(() => route.params.id, (newId) => {
+watch(
+  () => route.params.id,
+  (newId) => {
     if (newId && typeof newId === 'string' && newId !== recipe.value?.id) {
-        loadRecipe();
+      loadRecipe()
     }
-});
+  },
+)
 
- // Funktion zum Löschen eines Rezepts
- async function handleDelete(recipeId: string, recipeTitle: string) {
-   if (confirm(`Möchtest du das Rezept "${recipeTitle}" wirklich löschen?`)) {
-     console.log('Lösche Rezept:', recipeId);
-     const success = await recipeStore.deleteRecipeAction(recipeId);
-     if (success) {
-       console.log('Rezept erfolgreich gelöscht.');
-       router.push({ name: 'home'});
-     } else {
-       alert(`Fehler beim Löschen: ${recipeStore.error || 'Unbekannter Fehler'}`);
-     }
-   }
- }
+// Funktion zum Löschen eines Rezepts
+async function handleDelete(recipeId: string, recipeTitle: string) {
+  if (confirm(`Möchtest du das Rezept "${recipeTitle}" wirklich löschen?`)) {
+    console.log('Lösche Rezept:', recipeId)
+    const success = await recipeStore.deleteRecipeAction(recipeId)
+    if (success) {
+      console.log('Rezept erfolgreich gelöscht.')
+      router.push({ name: 'home' })
+    } else {
+      alert(`Fehler beim Löschen: ${recipeStore.error || 'Unbekannter Fehler'}`)
+    }
+  }
+}
 
- // Funktion zum Bearbeiten eines Rezepts
- function startEdit(recipeId: string) {
-   console.log('Navigiere zum Bearbeiten von Rezept:', recipeId);
-   router.push({ name: 'edit-recipe', params: { id: recipeId } });
- }
-
+// Funktion zum Bearbeiten eines Rezepts
+function startEdit(recipeId: string) {
+  console.log('Navigiere zum Bearbeiten von Rezept:', recipeId)
+  router.push({ name: 'edit-recipe', params: { id: recipeId } })
+}
 </script>
 
 <template>
   <div class="recipe-detail-view">
     <router-link :to="{ name: 'home' }" class="btn-back">&larr; Zurück</router-link>
     <div v-if="isLoading">Lade Rezept...</div>
-    <div v-else-if="error" style="color: red;">Fehler: {{ error }}</div>
+    <div v-else-if="error" style="color: red">Fehler: {{ error }}</div>
 
     <article v-else-if="recipe">
       <h2>{{ recipe.title }}</h2>
@@ -90,18 +92,15 @@ watch(() => route.params.id, (newId) => {
 
       <section class="details-section">
         <h3>Anleitung</h3>
-        <p style="white-space: pre-wrap;">{{ recipe.instructions }}</p>
+        <p style="white-space: pre-wrap">{{ recipe.instructions }}</p>
       </section>
       <RecipeTags :tags="recipe.tags" />
       <div class="actions-footer">
-        <button @click.stop="startEdit(recipe.id)" class="btn-edit">
-          Bearbeiten
-        </button>
+        <button @click.stop="startEdit(recipe.id)" class="btn-edit">Bearbeiten</button>
         <button @click.stop="handleDelete(recipe.id, recipe.title)" class="btn-delete">
           Löschen
         </button>
       </div>
-
     </article>
 
     <div v-else>Rezept nicht gefunden.</div>
@@ -161,12 +160,12 @@ h2 {
   position: relative;
   padding-left: 1.5em;
 }
- .details-section li::before {
-    content: '•';
-    color: var(--primary-color);
-    position: absolute;
-    left: 0;
-    top: 0;
+.details-section li::before {
+  content: '•';
+  color: var(--primary-color);
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
 .details-section p {
@@ -175,12 +174,12 @@ h2 {
 }
 
 .actions-footer {
-    margin-top: 2rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.8rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.8rem;
 }
 
 .actions-footer button {

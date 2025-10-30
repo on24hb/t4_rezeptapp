@@ -1,20 +1,20 @@
 export interface Recipe {
-  id: string; 
-  userId: string; 
-  title: string; 
-  ingredients: string[]; 
-  instructions: string; 
+  id: string;
+  userId: string;
+  title: string;
+  ingredients: string[];
+  instructions: string;
   tags?: string[];
 }
 
 /**
  * Rezepte für einen bestimmten Benutzer aus Deno KV abrufen
- * @param userId 
- * @returns 
+ * @param userId
+ * @returns
  * */
 export async function getRecipesByUser(userId: string): Promise<Recipe[]> {
-  const kv = await Deno.openKv(); 
-  const recipes: Recipe[] = []; 
+  const kv = await Deno.openKv();
+  const recipes: Recipe[] = [];
 
   const recipeEntries = kv.list<Recipe>({ prefix: ["recipes", userId] });
 
@@ -27,13 +27,13 @@ export async function getRecipesByUser(userId: string): Promise<Recipe[]> {
 
 /**
  * Neues Rezept erstellen und in Deno KV speichern
- * @param userId 
- * @param recipeData 
- * @returns 
+ * @param userId
+ * @param recipeData
+ * @returns
  */
 export async function createRecipe(
   userId: string,
-  recipeData: Omit<Recipe, "id" | "userId">,
+  recipeData: Omit<Recipe, "id" | "userId">
 ): Promise<Recipe> {
   const kv = await Deno.openKv();
 
@@ -57,18 +57,18 @@ export async function createRecipe(
 
 /**
  * Vorhandenes Rezept in Deno KV aktualisieren
- * @param userId 
+ * @param userId
  * @param recipeId
- * @param updatedData 
- * @returns 
+ * @param updatedData
+ * @returns
  */
 export async function updateRecipe(
   userId: string,
   recipeId: string,
-  updatedData: Omit<Recipe, "id" | "userId">,
+  updatedData: Omit<Recipe, "id" | "userId">
 ): Promise<Recipe | null> {
   const kv = await Deno.openKv();
-  const recipeKey = ["recipes", userId, recipeId]; 
+  const recipeKey = ["recipes", userId, recipeId];
 
   const existingEntry = await kv.get<Recipe>(recipeKey);
 
@@ -91,18 +91,21 @@ export async function updateRecipe(
 
 /**
  * Rezept aus Deno KV löschen
- * @param userId 
- * @param recipeId 
- * @returns 
+ * @param userId
+ * @param recipeId
+ * @returns
  */
-export async function deleteRecipe(userId: string, recipeId: string): Promise<boolean> {
+export async function deleteRecipe(
+  userId: string,
+  recipeId: string
+): Promise<boolean> {
   const kv = await Deno.openKv();
-  const recipeKey = ["recipes", userId, recipeId]; 
+  const recipeKey = ["recipes", userId, recipeId];
 
-  const existingEntry = await kv.get(recipeKey); 
+  const existingEntry = await kv.get(recipeKey);
 
   if (existingEntry.value === null || existingEntry.versionstamp === null) {
-    return false; 
+    return false;
   }
 
   await kv.delete(recipeKey);

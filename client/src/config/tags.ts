@@ -5,14 +5,14 @@ export const availableTags = [
   { name: 'vegan', colorClass: 'tag-color-2' },
   { name: 'herzhaft', colorClass: 'tag-color-5' },
   { name: 'süß', colorClass: 'tag-color-6' },
-  { name: 'getränk', colorClass: 'tag-color-1' }
-] as const;
+  { name: 'getränk', colorClass: 'tag-color-1' },
+] as const
 
 // Hilfstyp, um nur gültige Tag-Namen zu erlauben
-export type TagName = typeof availableTags[number]['name'];
+export type TagName = (typeof availableTags)[number]['name']
 
 // Funktion, um die Farbklasse für einen Tag-Namen zu bekommen
 export function getTagColorClassByName(tagName: TagName | string): string {
-  const foundTag = availableTags.find(tag => tag.name === tagName);
-  return foundTag ? foundTag.colorClass : 'tag-color-1'; // Fallback auf Grau
+  const foundTag = availableTags.find((tag) => tag.name === tagName)
+  return foundTag ? foundTag.colorClass : 'tag-color-1' // Fallback auf Grau
 }

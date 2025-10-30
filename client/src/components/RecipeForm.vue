@@ -1,66 +1,74 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import type { Recipe } from '../types/Recipe';
-import { availableTags, type TagName } from '@/config/tags';
+import { ref, watch } from 'vue'
+import type { Recipe } from '../types/Recipe'
+import { availableTags, type TagName } from '@/config/tags'
 
 // --- Props ---
 // Werte kommen von der übergeordneten Komponente (CreateRecipeView oder EditRecipeView)
 const props = defineProps<{
-  initialData?: Recipe | null;
-  isLoadingExternally?: boolean;
-  submitButtonText?: string;
-}>();
+  initialData?: Recipe | null
+  isLoadingExternally?: boolean
+  submitButtonText?: string
+}>()
 
 // --- Event ---
 const emit = defineEmits<{
-  (e: 'submit-recipe', data: Omit<Recipe, 'id' | 'userId'>): void;
-}>();
+  (e: 'submit-recipe', data: Omit<Recipe, 'id' | 'userId'>): void
+}>()
 
 const title = ref('')
 const ingredientsText = ref('')
 const instructions = ref('')
-const internalLoading = ref(false);
+const internalLoading = ref(false)
 const error = ref<string | null>(null)
-const selectedTags = ref<TagName[]>([]);
+const selectedTags = ref<TagName[]>([])
 
 function ingredientsToString(ingredients: string[] | undefined): string {
-    return ingredients ? ingredients.join('\n') : '';
+  return ingredients ? ingredients.join('\n') : ''
 }
 
 function parseIngredients(text: string): string[] {
-  return text.split('\n').map(line => line.trim()).filter(Boolean)
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
 }
 
 function initializeForm(data: Recipe | null | undefined) {
-    if (data) {
-        title.value = data.title;
-        ingredientsText.value = ingredientsToString(data.ingredients);
-        instructions.value = data.instructions;
-        selectedTags.value = data.tags ? [...data.tags] as TagName[] : [];    } else {
-        title.value = '';
-        ingredientsText.value = '';
-        instructions.value = '';
-        selectedTags.value = [];
-    }
-    error.value = null;
+  if (data) {
+    title.value = data.title
+    ingredientsText.value = ingredientsToString(data.ingredients)
+    instructions.value = data.instructions
+    selectedTags.value = data.tags ? ([...data.tags] as TagName[]) : []
+  } else {
+    title.value = ''
+    ingredientsText.value = ''
+    instructions.value = ''
+    selectedTags.value = []
+  }
+  error.value = null
 }
 
-watch(() => props.initialData, (newData) => {
-    console.log('RecipeForm: initialData received or changed:', newData); // Zum Debuggen
-    initializeForm(newData);
-}, { immediate: true });
+watch(
+  () => props.initialData,
+  (newData) => {
+    console.log('RecipeForm: initialData received or changed:', newData) // Zum Debuggen
+    initializeForm(newData)
+  },
+  { immediate: true },
+)
 
 async function handleSubmit() {
   internalLoading.value = true
   error.value = null
 
-  const ingredientsArray = parseIngredients(ingredientsText.value);
+  const ingredientsArray = parseIngredients(ingredientsText.value)
 
   // Einfache Validierung
   if (!title.value || ingredientsArray.length === 0 || !instructions.value) {
     error.value = 'Bitte fülle alle Felder aus.'
     internalLoading.value = false
-    return;
+    return
   }
 
   // Datenobjekt für das neue Rezept
@@ -68,11 +76,13 @@ async function handleSubmit() {
     title: title.value,
     ingredients: ingredientsArray,
     instructions: instructions.value.trim(),
-    tags: selectedTags.value
+    tags: selectedTags.value,
   }
 
-  emit('submit-recipe', recipeData);
-  setTimeout(() => { internalLoading.value = false; }, 1000);
+  emit('submit-recipe', recipeData)
+  setTimeout(() => {
+    internalLoading.value = false
+  }, 1000)
 }
 </script>
 
@@ -80,17 +90,35 @@ async function handleSubmit() {
   <form @submit.prevent="handleSubmit">
     <div class="form-group">
       <label for="title">Titel:</label>
-      <input type="text" id="title" v-model="title" required :disabled="props.isLoadingExternally" />
+      <input
+        type="text"
+        id="title"
+        v-model="title"
+        required
+        :disabled="props.isLoadingExternally"
+      />
     </div>
 
     <div class="form-group">
       <label for="ingredients">Zutaten (pro Zeile eine Zutat):</label>
-      <textarea id="ingredients" v-model="ingredientsText" rows="5" required :disabled="props.isLoadingExternally" ></textarea>
+      <textarea
+        id="ingredients"
+        v-model="ingredientsText"
+        rows="5"
+        required
+        :disabled="props.isLoadingExternally"
+      ></textarea>
     </div>
 
     <div class="form-group">
       <label for="instructions">Anleitung:</label>
-      <textarea id="instructions" v-model="instructions" rows="8" required :disabled="props.isLoadingExternally" ></textarea>
+      <textarea
+        id="instructions"
+        v-model="instructions"
+        rows="8"
+        required
+        :disabled="props.isLoadingExternally"
+      ></textarea>
     </div>
 
     <div class="form-group">
@@ -113,8 +141,12 @@ async function handleSubmit() {
 
     <p v-if="error" class="error-message">{{ error }}</p>
 
-    <button type="submit" :disabled="props.isLoadingExternally" >
-    {{ (props.isLoadingExternally || internalLoading) ? 'Speichern...' : (props.submitButtonText || 'Speichern') }}
+    <button type="submit" :disabled="props.isLoadingExternally">
+      {{
+        props.isLoadingExternally || internalLoading
+          ? 'Speichern...'
+          : props.submitButtonText || 'Speichern'
+      }}
     </button>
   </form>
 </template>
@@ -129,7 +161,7 @@ label {
   font-weight: 500;
   color: var(--text-light);
 }
-input[type="text"],
+input[type='text'],
 textarea {
   width: 100%;
   padding: 0.8rem;
@@ -142,7 +174,7 @@ textarea {
   color: var(--text-color);
 }
 textarea {
-    resize: vertical;
+  resize: vertical;
 }
 button {
   width: 100%;
@@ -179,7 +211,7 @@ button:hover:not(:disabled) {
   display: flex;
   align-items: center;
 }
-.tag-checkbox-item input[type="checkbox"] {
+.tag-checkbox-item input[type='checkbox'] {
   opacity: 0;
   position: absolute;
   width: 0;
@@ -195,11 +227,11 @@ button:hover:not(:disabled) {
   border: 1px solid transparent;
   transition: all 0.2s ease;
 }
-.tag-checkbox-item input[type="checkbox"]:checked + .tag-label {
+.tag-checkbox-item input[type='checkbox']:checked + .tag-label {
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.301);
   font-weight: 500;
 }
-.tag-checkbox-item input[type="checkbox"]:not(:checked) + .tag-label:hover {
-    opacity: 0.8;
+.tag-checkbox-item input[type='checkbox']:not(:checked) + .tag-label:hover {
+  opacity: 0.8;
 }
 </style>

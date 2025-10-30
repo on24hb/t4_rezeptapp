@@ -45,9 +45,9 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await fetch('https://localhost:8000/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password }),
       })
 
       if (!response.ok) {
@@ -75,11 +75,11 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Entfernt das Token aus dem State und localStorage.
    */
- function logout() {
+  function logout() {
     token.value = null
     localStorage.removeItem('authToken')
     loginError.value = null
-    console.log('Ausgeloggt, leite zu /login weiter...') 
+    console.log('Ausgeloggt, leite zu /login weiter...')
     router.push({ name: 'login' })
   }
 
@@ -91,6 +91,6 @@ export const useAuthStore = defineStore('auth', () => {
     isLoggedIn,
     userId,
     login,
-    logout
+    logout,
   }
 })

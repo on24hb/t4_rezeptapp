@@ -246,6 +246,7 @@ p[style*='color: red;'] {
   font-size: 0.8rem;
   cursor: pointer;
   margin-left: auto;
+  padding-right: 0;
   padding-left: 0.5rem;
 }
 .filter-clear-btn:hover {

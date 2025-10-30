@@ -1,5 +1,5 @@
-import { SignJWT, jwtVerify, type JWTPayload } from "jose"; 
-import { JWT_SECRET_KEY } from "./config.ts"; 
+import { SignJWT, jwtVerify, type JWTPayload } from "jose";
+import { JWT_SECRET_KEY } from "./config.ts";
 import { type Context, Middleware } from "oak"; //
 
 // Secret Key vorbereiten (Uint8Array)
@@ -33,17 +33,31 @@ export async function verifyJWT(token: string): Promise<JWTPayload | null> {
 /** @param ctx */
 export const loginHandler = async (ctx: Context) => {
   try {
-    if (!ctx.request.hasBody || ctx.request.headers.get("content-type")?.toLowerCase() !== "application/json") {
-      ctx.response.status = 400; 
-      ctx.response.body = { message: "Anfrage muss einen JSON Body mit username und password enthalten." };
+    if (
+      !ctx.request.hasBody ||
+      ctx.request.headers.get("content-type")?.toLowerCase() !==
+        "application/json"
+    ) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        message:
+          "Anfrage muss einen JSON Body mit username und password enthalten.",
+      };
       return;
     }
 
     const body = await ctx.request.body().value; // Liest JSON Body: { username: "...", password: "..." }
 
-    if (!body || typeof body.username !== 'string' || typeof body.password !== 'string') {
-      ctx.response.status = 400; 
-      ctx.response.body = { message: "username und password müssen als Strings im JSON Body gesendet werden." };
+    if (
+      !body ||
+      typeof body.username !== "string" ||
+      typeof body.password !== "string"
+    ) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        message:
+          "username und password müssen als Strings im JSON Body gesendet werden.",
+      };
       return;
     }
 
@@ -55,26 +69,28 @@ export const loginHandler = async (ctx: Context) => {
     if (username === "t4exam" && password === "SuperKurs") {
       validUser = true;
       userIdForToken = "t4exam";
-    } else if (username === "t4tester2" && password === "TollerKurs") { 
+    } else if (username === "t4tester2" && password === "TollerKurs") {
       validUser = true;
       userIdForToken = "t4tester2";
     }
-      // Payload für das JWT erstellen (userId identifiziert den Benutzer eindeutig)
-      if (validUser) {
+    // Payload für das JWT erstellen (userId identifiziert den Benutzer eindeutig)
+    if (validUser) {
       const payload = { userId: username };
       const token = await createJWT(payload);
       ctx.response.body = { token: token };
-      ctx.response.status = 200; 
-      console.log(`Benutzer '${username}' erfolgreich eingeloggt.`); 
+      ctx.response.status = 200;
+      console.log(`Benutzer '${username}' erfolgreich eingeloggt.`);
     } else {
-      ctx.response.status = 401; 
+      ctx.response.status = 401;
       ctx.response.body = { message: "Ungültiger Benutzername oder Passwort." };
-      console.warn(`Fehlgeschlagener Login-Versuch für Benutzer '${username}'.`); 
+      console.warn(
+        `Fehlgeschlagener Login-Versuch für Benutzer '${username}'.`
+      );
     }
   } catch (error) {
     console.error("Fehler im loginHandler:", error);
-    ctx.response.status = 400; 
-    ctx.response.body = { message: "Ungültige Anfrage: " + error};
+    ctx.response.status = 400;
+    ctx.response.body = { message: "Ungültige Anfrage: " + error };
   }
 };
 
@@ -87,8 +103,11 @@ export const jwtMiddleware: Middleware = async (ctx, next) => {
   const authHeader = ctx.request.headers.get("Authorization");
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    ctx.response.status = 401; 
-    ctx.response.body = { message: "Authentifizierungstoken fehlt oder ist im falschen Format (Bearer)." };
+    ctx.response.status = 401;
+    ctx.response.body = {
+      message:
+        "Authentifizierungstoken fehlt oder ist im falschen Format (Bearer).",
+    };
     return;
   }
 
@@ -96,13 +115,16 @@ export const jwtMiddleware: Middleware = async (ctx, next) => {
   const payload = await verifyJWT(token);
 
   if (!payload || !payload.userId) {
-    ctx.response.status = 401; 
-    ctx.response.body = { message: "Authentifizierungstoken ungültig, abgelaufen oder enthält keine Benutzer-ID." };
+    ctx.response.status = 401;
+    ctx.response.body = {
+      message:
+        "Authentifizierungstoken ungültig, abgelaufen oder enthält keine Benutzer-ID.",
+    };
     return;
   }
 
-  ctx.state.user = payload; 
-  console.log("Token gültig, Benutzer:", ctx.state.user); 
+  ctx.state.user = payload;
+  console.log("Token gültig, Benutzer:", ctx.state.user);
 
   await next();
 };

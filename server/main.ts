@@ -1,35 +1,47 @@
 import { Application, Router, type RouterContext } from "oak";
 import { loginHandler, jwtMiddleware } from "./auth.ts";
-import { getRecipesByUser, createRecipe, type Recipe, updateRecipe, deleteRecipe } from "./recipe.ts";
+import {
+  getRecipesByUser,
+  createRecipe,
+  type Recipe,
+  updateRecipe,
+  deleteRecipe,
+} from "./recipe.ts";
 import { type JWTPayload } from "jose";
 
 interface AppState {
-  user?: JWTPayload & { userId: string }; 
+  user?: JWTPayload & { userId: string };
 }
 
 const app = new Application<AppState>();
 const router = new Router();
 
-// CORS Middleware 
+// CORS Middleware
 app.use(async (ctx, next) => {
-  const allowedOrigins = ["https://localhost:5173", "https://127.0.0.1:5173"]; 
+  const allowedOrigins = ["https://localhost:5173", "https://127.0.0.1:5173"];
   const origin = ctx.request.headers.get("Origin");
   if (origin && allowedOrigins.includes(origin)) {
-      ctx.response.headers.set("Access-Control-Allow-Origin", origin);
+    ctx.response.headers.set("Access-Control-Allow-Origin", origin);
   }
 
-  ctx.response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  ctx.response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  ctx.response.headers.set(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS"
+  );
+  ctx.response.headers.set(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
   ctx.response.headers.set("Access-Control-Allow-Credentials", "true"); // Optional, falls Cookies/Credentials nötig
 
   if (ctx.request.method === "OPTIONS") {
-    ctx.response.status = 204; 
+    ctx.response.status = 204;
   } else {
     await next();
   }
 });
 
-// Logging Middleware 
+// Logging Middleware
 app.use(async (ctx, next) => {
   console.log(`${ctx.request.method} ${ctx.request.url.pathname}`);
   await next();
@@ -44,75 +56,108 @@ router.get("/", (ctx) => {
 router.post("/login", loginHandler);
 
 // GET /api/recipes
-const getRecipesHandler = async (ctx: RouterContext<"/api/recipes", Record<string, never>, AppState>) => {
+const getRecipesHandler = async (
+  ctx: RouterContext<"/api/recipes", Record<string, never>, AppState>
+) => {
   try {
     const userId = ctx.state.user?.userId;
     if (!userId) {
-       console.error("Fehler: userId nicht im Context State gefunden nach jwtMiddleware.");
-       ctx.response.status = 500; 
-       ctx.response.body = { message: "Benutzerinformationen konnten nicht ermittelt werden." };
-       return;
+      console.error(
+        "Fehler: userId nicht im Context State gefunden nach jwtMiddleware."
+      );
+      ctx.response.status = 500;
+      ctx.response.body = {
+        message: "Benutzerinformationen konnten nicht ermittelt werden.",
+      };
+      return;
     }
 
     const recipes = await getRecipesByUser(userId);
 
     ctx.response.body = recipes;
-    ctx.response.status = 200; 
+    ctx.response.status = 200;
   } catch (err) {
     console.error("Fehler im getRecipesHandler:", err);
-    const errorMessage = (err instanceof Error) ? err.message : String(err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
     ctx.response.status = 500;
-    ctx.response.body = { message: "Fehler beim Abrufen der Rezepte: " + errorMessage };
+    ctx.response.body = {
+      message: "Fehler beim Abrufen der Rezepte: " + errorMessage,
+    };
   }
 };
 
 router.get("/api/recipes", jwtMiddleware, getRecipesHandler);
 
-
 // POST /api/recipes
-const createRecipeHandler = async (ctx: RouterContext<"/api/recipes", Record<string, never>, AppState>) => {  try {
+const createRecipeHandler = async (
+  ctx: RouterContext<"/api/recipes", Record<string, never>, AppState>
+) => {
+  try {
     const userId = ctx.state.user?.userId;
     if (!userId) {
       ctx.response.status = 500;
-      ctx.response.body = { message: "Benutzerinformationen konnten nicht ermittelt werden." };
+      ctx.response.body = {
+        message: "Benutzerinformationen konnten nicht ermittelt werden.",
+      };
       return;
     }
 
-    if (!ctx.request.hasBody || ctx.request.headers.get("content-type")?.toLowerCase() !== "application/json") {
+    if (
+      !ctx.request.hasBody ||
+      ctx.request.headers.get("content-type")?.toLowerCase() !==
+        "application/json"
+    ) {
       ctx.response.status = 400;
-      ctx.response.body = { message: "Anfrage muss einen JSON Body mit title, ingredients und instructions enthalten." };
+      ctx.response.body = {
+        message:
+          "Anfrage muss einen JSON Body mit title, ingredients und instructions enthalten.",
+      };
       return;
     }
 
     const body = await ctx.request.body().value;
 
-    // Validierung für Tags 
+    // Validierung für Tags
     const tagsFromBody = body.tags;
-    let validatedTags: string[] = []; 
-    if (tagsFromBody !== undefined) { // Nur prüfen, wenn 'tags' gesendet wurde
-        if (!Array.isArray(tagsFromBody) || !tagsFromBody.every((t: unknown) => typeof t === 'string')) {
-            ctx.response.status = 400;
-            ctx.response.body = { message: "Ungültige Daten: 'tags' muss ein Array aus Strings sein." };
-            return;
-        }
-        validatedTags = tagsFromBody.map((t: string) => t.trim()).filter(Boolean);
+    let validatedTags: string[] = [];
+    if (tagsFromBody !== undefined) {
+      // Nur prüfen, wenn 'tags' gesendet wurde
+      if (
+        !Array.isArray(tagsFromBody) ||
+        !tagsFromBody.every((t: unknown) => typeof t === "string")
+      ) {
+        ctx.response.status = 400;
+        ctx.response.body = {
+          message: "Ungültige Daten: 'tags' muss ein Array aus Strings sein.",
+        };
+        return;
+      }
+      validatedTags = tagsFromBody.map((t: string) => t.trim()).filter(Boolean);
     }
 
     // Validierung der Pflichtfelder
     if (
       !body ||
-      typeof body.title !== 'string' || body.title.trim() === '' ||
-      !Array.isArray(body.ingredients) || body.ingredients.some((i: unknown) => typeof i !== 'string') || // Prüft, ob ingredients ein Array aus Strings ist
-      typeof body.instructions !== 'string' || body.instructions.trim() === ''
+      typeof body.title !== "string" ||
+      body.title.trim() === "" ||
+      !Array.isArray(body.ingredients) ||
+      body.ingredients.some((i: unknown) => typeof i !== "string") || // Prüft, ob ingredients ein Array aus Strings ist
+      typeof body.instructions !== "string" ||
+      body.instructions.trim() === ""
     ) {
-      ctx.response.status = 400; 
-      ctx.response.body = { message: "Ungültige oder fehlende Daten. Benötigt: title (string), ingredients (string[]), instructions (string)." };
+      ctx.response.status = 400;
+      ctx.response.body = {
+        message:
+          "Ungültige oder fehlende Daten. Benötigt: title (string), ingredients (string[]), instructions (string).",
+      };
       return;
     }
 
     const recipeData: Omit<Recipe, "id" | "userId"> = {
       title: body.title.trim(),
-      ingredients: body.ingredients.map((i: string) => i.trim()).filter(Boolean), // Leere Strings entfernen
+      ingredients: body.ingredients
+        .map((i: string) => i.trim())
+        .filter(Boolean), // Leere Strings entfernen
       instructions: body.instructions.trim(),
       tags: validatedTags,
     };
@@ -121,13 +166,16 @@ const createRecipeHandler = async (ctx: RouterContext<"/api/recipes", Record<str
 
     ctx.response.body = newRecipe;
     ctx.response.status = 201;
-    console.log(`Neues Rezept '${newRecipe.title}' für Benutzer '${userId}' erstellt.`);
-
+    console.log(
+      `Neues Rezept '${newRecipe.title}' für Benutzer '${userId}' erstellt.`
+    );
   } catch (err) {
     console.error("Fehler im createRecipeHandler:", err);
-    const errorMessage = (err instanceof Error) ? err.message : String(err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
     ctx.response.status = 500;
-    ctx.response.body = { message: "Fehler beim Erstellen des Rezepts: " + errorMessage };
+    ctx.response.body = {
+      message: "Fehler beim Erstellen des Rezepts: " + errorMessage,
+    };
   }
 };
 
@@ -135,70 +183,101 @@ router.post("/api/recipes", jwtMiddleware, createRecipeHandler);
 
 // PUT /api/recipes/:id
 const updateRecipeHandler = async (
-  ctx: RouterContext<"/api/recipes/:id", { id: string }, AppState>, 
+  ctx: RouterContext<"/api/recipes/:id", { id: string }, AppState>
 ) => {
   try {
     const userId = ctx.state.user?.userId;
-    if (!userId) { 
+    if (!userId) {
       ctx.response.status = 500;
-      ctx.response.body = { message: "Benutzerinformationen konnten nicht ermittelt werden." };
+      ctx.response.body = {
+        message: "Benutzerinformationen konnten nicht ermittelt werden.",
+      };
       return;
     }
 
     const recipeId = ctx.params.id;
 
-     if (!ctx.request.hasBody || ctx.request.headers.get("content-type")?.toLowerCase() !== "application/json") {
-       ctx.response.status = 400;
-       ctx.response.body = { message: "Anfrage muss einen JSON Body mit title, ingredients und instructions enthalten." };
-       return;
-     }
-     const body = await ctx.request.body().value;
-
-     // Validierung für Tags 
-    const tagsFromBody = body.tags;
-    let validatedTags: string[] = []; 
-    if (tagsFromBody !== undefined) { // Nur prüfen, wenn 'tags' gesendet wurde
-        if (!Array.isArray(tagsFromBody) || !tagsFromBody.every((t: unknown) => typeof t === 'string')) {
-            ctx.response.status = 400;
-            ctx.response.body = { message: "Ungültige Daten: 'tags' muss ein Array aus Strings sein." };
-            return;
-        }
-        validatedTags = tagsFromBody.map((t: string) => t.trim()).filter(Boolean);
+    if (
+      !ctx.request.hasBody ||
+      ctx.request.headers.get("content-type")?.toLowerCase() !==
+        "application/json"
+    ) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        message:
+          "Anfrage muss einen JSON Body mit title, ingredients und instructions enthalten.",
+      };
+      return;
     }
-    
+    const body = await ctx.request.body().value;
+
+    // Validierung für Tags
+    const tagsFromBody = body.tags;
+    let validatedTags: string[] = [];
+    if (tagsFromBody !== undefined) {
+      // Nur prüfen, wenn 'tags' gesendet wurde
+      if (
+        !Array.isArray(tagsFromBody) ||
+        !tagsFromBody.every((t: unknown) => typeof t === "string")
+      ) {
+        ctx.response.status = 400;
+        ctx.response.body = {
+          message: "Ungültige Daten: 'tags' muss ein Array aus Strings sein.",
+        };
+        return;
+      }
+      validatedTags = tagsFromBody.map((t: string) => t.trim()).filter(Boolean);
+    }
+
     // Validierung der Pflichtfelder
-     if (
-       !body ||
-       typeof body.title !== 'string' || body.title.trim() === '' ||
-       !Array.isArray(body.ingredients) || body.ingredients.some((i: unknown) => typeof i !== 'string') ||
-       typeof body.instructions !== 'string' || body.instructions.trim() === ''
-     ) {
-       ctx.response.status = 400;
-       ctx.response.body = { message: "Ungültige oder fehlende Daten. Benötigt: title (string), ingredients (string[]), instructions (string)." };
-       return;
-     }
-     const updatedData: Omit<Recipe, "id" | "userId"> = {
-       title: body.title.trim(),
-       ingredients: body.ingredients.map((i: string) => i.trim()).filter(Boolean),
-       instructions: body.instructions.trim(),
-       tags: validatedTags,
-     };
+    if (
+      !body ||
+      typeof body.title !== "string" ||
+      body.title.trim() === "" ||
+      !Array.isArray(body.ingredients) ||
+      body.ingredients.some((i: unknown) => typeof i !== "string") ||
+      typeof body.instructions !== "string" ||
+      body.instructions.trim() === ""
+    ) {
+      ctx.response.status = 400;
+      ctx.response.body = {
+        message:
+          "Ungültige oder fehlende Daten. Benötigt: title (string), ingredients (string[]), instructions (string).",
+      };
+      return;
+    }
+    const updatedData: Omit<Recipe, "id" | "userId"> = {
+      title: body.title.trim(),
+      ingredients: body.ingredients
+        .map((i: string) => i.trim())
+        .filter(Boolean),
+      instructions: body.instructions.trim(),
+      tags: validatedTags,
+    };
     const updatedRecipe = await updateRecipe(userId, recipeId, updatedData);
 
     if (updatedRecipe) {
       ctx.response.body = updatedRecipe;
       ctx.response.status = 200;
-      console.log(`Rezept '${updatedRecipe.title}' (ID: ${recipeId}) für Benutzer '${userId}' aktualisiert.`);
+      console.log(
+        `Rezept '${updatedRecipe.title}' (ID: ${recipeId}) für Benutzer '${userId}' aktualisiert.`
+      );
     } else {
       ctx.response.status = 404;
-      ctx.response.body = { message: `Rezept mit ID '${recipeId}' nicht gefunden oder Zugriff verweigert.` };
-      console.warn(`Fehlgeschlagener Update-Versuch für Rezept ID '${recipeId}', Benutzer '${userId}'.`);
+      ctx.response.body = {
+        message: `Rezept mit ID '${recipeId}' nicht gefunden oder Zugriff verweigert.`,
+      };
+      console.warn(
+        `Fehlgeschlagener Update-Versuch für Rezept ID '${recipeId}', Benutzer '${userId}'.`
+      );
     }
   } catch (err) {
     console.error("Fehler im updateRecipeHandler:", err);
-    const errorMessage = (err instanceof Error) ? err.message : String(err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
     ctx.response.status = 500;
-    ctx.response.body = { message: "Fehler beim Aktualisieren des Rezepts: " + errorMessage };
+    ctx.response.body = {
+      message: "Fehler beim Aktualisieren des Rezepts: " + errorMessage,
+    };
   }
 };
 
@@ -206,13 +285,15 @@ router.put("/api/recipes/:id", jwtMiddleware, updateRecipeHandler);
 
 // DELETE /api/recipes/:id
 const deleteRecipeHandler = async (
-  ctx: RouterContext<"/api/recipes/:id", { id: string }, AppState>,
+  ctx: RouterContext<"/api/recipes/:id", { id: string }, AppState>
 ) => {
   try {
     const userId = ctx.state.user?.userId;
     if (!userId) {
       ctx.response.status = 500;
-      ctx.response.body = { message: "Benutzerinformationen konnten nicht ermittelt werden." };
+      ctx.response.body = {
+        message: "Benutzerinformationen konnten nicht ermittelt werden.",
+      };
       return;
     }
 
@@ -224,20 +305,24 @@ const deleteRecipeHandler = async (
       console.log(`Rezept ID '${recipeId}' für Benutzer '${userId}' gelöscht.`);
     } else {
       ctx.response.status = 404;
-      ctx.response.body = { message: `Rezept mit ID '${recipeId}' nicht gefunden oder Zugriff verweigert.` };
-      console.warn(`Fehlgeschlagener Lösch-Versuch für Rezept ID '${recipeId}', Benutzer '${userId}'.`);
+      ctx.response.body = {
+        message: `Rezept mit ID '${recipeId}' nicht gefunden oder Zugriff verweigert.`,
+      };
+      console.warn(
+        `Fehlgeschlagener Lösch-Versuch für Rezept ID '${recipeId}', Benutzer '${userId}'.`
+      );
     }
-
   } catch (err) {
     console.error("Fehler im deleteRecipeHandler:", err);
-    const errorMessage = (err instanceof Error) ? err.message : String(err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
     ctx.response.status = 500;
-    ctx.response.body = { message: "Fehler beim Löschen des Rezepts: " + errorMessage };
+    ctx.response.body = {
+      message: "Fehler beim Löschen des Rezepts: " + errorMessage,
+    };
   }
 };
 
 router.delete("/api/recipes/:id", jwtMiddleware, deleteRecipeHandler);
-
 
 // App Start
 app.use(router.routes());
@@ -245,7 +330,7 @@ app.use(router.allowedMethods());
 
 console.log("Server wird gestartet...");
 
-console.log("Server läuft auf https://localhost:8000"); 
+console.log("Server läuft auf https://localhost:8000");
 await app.listen({
   port: 8000,
   cert: await Deno.readTextFile("./localhost.pem"),
