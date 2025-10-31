@@ -1,6 +1,12 @@
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { JWT_SECRET_KEY } from "./config.ts";
-import { type Context, Middleware } from "oak"; //
+import { type Context, Middleware } from "oak";
+import {
+  TEST_USER_1_NAME,
+  TEST_USER_1_PASS,
+  TEST_USER_2_NAME,
+  TEST_USER_2_PASS,
+} from "./config.ts";
 
 // Secret Key vorbereiten (Uint8Array)
 const secretKey = new TextEncoder().encode(JWT_SECRET_KEY);
@@ -64,14 +70,14 @@ export const loginHandler = async (ctx: Context) => {
     const { username, password } = body;
 
     let validUser = false;
-    let userIdForToken = "";
+    let userIdForToken: string | undefined;
 
-    if (username === "t4exam" && password === "SuperKurs") {
+    if (username === TEST_USER_1_NAME && password === TEST_USER_1_PASS) {
       validUser = true;
-      userIdForToken = "t4exam";
-    } else if (username === "t4tester2" && password === "TollerKurs") {
+      userIdForToken = TEST_USER_1_NAME;
+    } else if (username === TEST_USER_2_NAME && password === TEST_USER_2_PASS) {
       validUser = true;
-      userIdForToken = "t4tester2";
+      userIdForToken = TEST_USER_2_NAME;
     }
     // Payload für das JWT erstellen (userId identifiziert den Benutzer eindeutig)
     if (validUser) {
