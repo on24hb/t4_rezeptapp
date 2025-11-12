@@ -6,6 +6,7 @@ import {
   type Recipe,
   updateRecipe,
   deleteRecipe,
+  toggleFavoriteStatus,
 } from "./recipe.ts";
 import { type JWTPayload } from "jose";
 
@@ -153,7 +154,7 @@ const createRecipeHandler = async (
       return;
     }
 
-    const recipeData: Omit<Recipe, "id" | "userId"> = {
+    const recipeData: Omit<Recipe, "id" | "userId" | "isFavorite"> = {
       title: body.title.trim(),
       ingredients: body.ingredients
         .map((i: string) => i.trim())
@@ -246,7 +247,7 @@ const updateRecipeHandler = async (
       };
       return;
     }
-    const updatedData: Omit<Recipe, "id" | "userId"> = {
+    const updatedData: Omit<Recipe, "id" | "userId" | "isFavorite"> = {
       title: body.title.trim(),
       ingredients: body.ingredients
         .map((i: string) => i.trim())
@@ -323,6 +324,32 @@ const deleteRecipeHandler = async (
 };
 
 router.delete("/api/recipes/:id", jwtMiddleware, deleteRecipeHandler);
+
+const favoriteRecipeHandler = async (
+  ctx: RouterContext<"/api/recipes/:id/favorite", { id: string }, AppState>,
+) => {
+  try {
+    const userId = ctx.state.user?.userId;
+    if (!userId) {
+      return;
+    }
+    const recipeId = ctx.params.id;
+
+    const updatedRecipe = await toggleFavoriteStatus(userId, recipeId);
+
+    if (updatedRecipe) {
+      ctx.response.body = updatedRecipe;
+      ctx.response.status = 200; 
+      console.log(`Rezept ${recipeId} Favoriten-Status für User ${userId} umgeschaltet.`);
+    } else {
+      ctx.response.status = 404;
+      ctx.response.body = { message: `Rezept mit ID '${recipeId}' nicht gefunden oder Zugriff verweigert.` };
+    }
+  } catch (err) {
+    console.error("Fehler im favoriteRecipeHandler:", err);}
+};
+
+router.patch("/api/recipes/:id/favorite", jwtMiddleware, favoriteRecipeHandler);
 
 // App Start
 app.use(router.routes());

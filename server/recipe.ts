@@ -5,6 +5,7 @@ export interface Recipe {
   ingredients: string[];
   instructions: string;
   tags?: string[];
+  isFavorite: boolean;
 }
 
 /**
@@ -33,7 +34,7 @@ export async function getRecipesByUser(userId: string): Promise<Recipe[]> {
  */
 export async function createRecipe(
   userId: string,
-  recipeData: Omit<Recipe, "id" | "userId">
+  recipeData: Omit<Recipe, "id" | "userId" | "isFavorite">
 ): Promise<Recipe> {
   const kv = await Deno.openKv();
 
@@ -46,6 +47,7 @@ export async function createRecipe(
     ingredients: recipeData.ingredients,
     instructions: recipeData.instructions,
     tags: recipeData.tags || [],
+    isFavorite: false,
   };
 
   const recipeKey = ["recipes", userId, newRecipeId];
@@ -65,7 +67,7 @@ export async function createRecipe(
 export async function updateRecipe(
   userId: string,
   recipeId: string,
-  updatedData: Omit<Recipe, "id" | "userId">
+  updatedData: Omit<Recipe, "id" | "userId" | "isFavorite">
 ): Promise<Recipe | null> {
   const kv = await Deno.openKv();
   const recipeKey = ["recipes", userId, recipeId];
@@ -83,6 +85,7 @@ export async function updateRecipe(
     ingredients: updatedData.ingredients,
     instructions: updatedData.instructions,
     tags: updatedData.tags || [],
+    isFavorite: existingEntry.value.isFavorite,
   };
 
   await kv.set(recipeKey, updatedRecipe);
@@ -110,4 +113,31 @@ export async function deleteRecipe(
 
   await kv.delete(recipeKey);
   return true;
+}
+
+/**
+ * 'isFavorite'-Status eines Rezepts umschalten
+ * @param userId
+ * @param recipeId
+ * @returns
+ */
+export async function toggleFavoriteStatus(
+  userId: string,
+  recipeId: string
+): Promise<Recipe | null> {
+  const kv = await Deno.openKv();
+  const recipeKey = ["recipes", userId, recipeId];
+
+  const existingEntry = await kv.get<Recipe>(recipeKey);
+  if (existingEntry.value === null || existingEntry.versionstamp === null) {
+    return null;
+  }
+
+  const updatedRecipe = {
+    ...existingEntry.value, // Alle alten Daten
+    isFavorite: !existingEntry.value.isFavorite, // Den Status umkehren
+  };
+
+  await kv.set(recipeKey, updatedRecipe);
+  return updatedRecipe;
 }
