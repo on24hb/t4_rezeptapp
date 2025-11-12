@@ -27,7 +27,7 @@ app.use(async (ctx, next) => {
 
   ctx.response.headers.set(
     "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
+    "GET, POST, PUT, DELETE, OPTIONS, PATCH"
   );
   ctx.response.headers.set(
     "Access-Control-Allow-Headers",

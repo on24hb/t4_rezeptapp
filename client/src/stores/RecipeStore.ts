@@ -9,25 +9,35 @@ export const useRecipeStore = defineStore('recipes', () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const activeTagFilters = ref<string[]>([])
+  const togglingFavoriteId = ref<string | null>(null);
 
   // --- Getters ---
   /**
    * Ein Getter, der die Rezeptliste basierend auf den aktiven Filtern berechnet
    */
   const filteredRecipes = computed(() => {
-    if (activeTagFilters.value.length === 0) {
-      return recipes.value
-    }
+    let result: Recipe[] = recipes.value
+
+    if (activeTagFilters.value.length > 0) {
     // Wenn Filter aktiv sind, filtere die Liste
-    return recipes.value.filter((recipe) => {
+    result = recipes.value.filter((recipe) => {
       // Prüfe, ob das Rezept überhaupt Tags hat
       if (!recipe.tags || recipe.tags.length === 0) {
         return false
       }
-      return activeTagFilters.value.every((filterTag) => recipe.tags?.includes(filterTag))
-    })
-  })
+      return activeTagFilters.value.every((filterTag) => recipe.tags?.includes(filterTag));
+      })
+    }
 
+    // Sortiert das Resultat (Favoriten zuerst)
+    const sorted = [...result].sort((a: Recipe, b: Recipe) => {
+      const favA = a.isFavorite ? 1 : 0
+      const favB = b.isFavorite ? 1 : 0
+      return favB - favA // Favoriten (1) kommen vor Nicht-Favoriten (0)
+    })
+
+    return sorted
+  })
   // --- Actions ---
 
   /**
@@ -243,6 +253,57 @@ export const useRecipeStore = defineStore('recipes', () => {
   }
 
   /**
+   * Schaltet den Favoriten-Status eines Rezepts um
+   * @param recipeId
+   * @returns
+   */
+  async function toggleFavoriteAction(recipeId: string): Promise<boolean> {
+    const authStore = useAuthStore();
+    if (!authStore.isLoggedIn || !authStore.token) {
+      error.value = 'Nicht eingeloggt.';
+      return false;
+    }
+
+    togglingFavoriteId.value = recipeId; // Setze Ladezustand für diesen Button
+    error.value = null;
+
+    try {
+      const response = await fetch(`https://localhost:8000/api/recipes/${recipeId}/favorite`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          error.value = 'Sitzung abgelaufen.';
+          authStore.logout();
+        } else {
+          error.value = `Fehler beim Setzen des Favoriten-Status (${response.status})`;
+        }
+        return false;
+      }
+
+      const updatedRecipe = await response.json() as Recipe;
+      // Aktualisiere das Rezept im lokalen 'recipes' Array
+      const index = recipes.value.findIndex(r => r.id === recipeId);
+      if (index !== -1) {
+        recipes.value[index] = updatedRecipe; // Ersetze das alte Objekt
+      }
+      console.log(`Favoriten-Status für ${recipeId} aktualisiert.`);
+      return true;
+
+    } catch (err) {
+      console.error('Netzwerkfehler beim Favoriten-Toggle:', err);
+      error.value = 'Netzwerkfehler oder Server nicht erreichbar.';
+      return false;
+    } finally {
+      togglingFavoriteId.value = null; // Ladezustand zurücksetzen
+    }
+  }
+
+  /**
    * Fügt einen Tag-Filter hinzu, WENN er noch nicht aktiv ist.
    * @param tagName
    */
@@ -282,5 +343,7 @@ export const useRecipeStore = defineStore('recipes', () => {
     addTagFilter,
     removeTagFilter,
     clearTagFilters,
-  }
-})
+    togglingFavoriteId,
+    toggleFavoriteAction,
+  };
+});

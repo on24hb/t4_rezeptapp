@@ -27,6 +27,12 @@ onMounted(() => {
   console.log('HomeView wurde gemountet, rufe fetchRecipes auf...')
   recipeStore.fetchRecipes()
 })
+
+async function toggleFavorite(recipeId: string) {
+  // .prevent.stop am Button verhindert, dass die Navigation ausgelöst wird.
+  await recipeStore.toggleFavoriteAction(recipeId)
+  // Die 'filteredRecipes'-Liste wird sich dank des Getters im Store automatisch neu anordnen
+}
 </script>
 
 <template>
@@ -90,6 +96,16 @@ onMounted(() => {
           <div class="recipe-card">
             <div class="recipe-header">
               <h4>{{ recipe.title }}</h4>
+              <button
+                class="btn-fav"
+                :class="{ 'is-loading': recipeStore.togglingFavoriteId === recipe.id }"
+                @click.prevent.stop="toggleFavorite(recipe.id)"
+                :aria-pressed="recipe.isFavorite"
+                :title="recipe.isFavorite ? 'Favorit entfernen' : 'Als Favorit markieren'"
+              >
+                <span v-if="recipeStore.togglingFavoriteId === recipe.id">…</span>
+                <span v-else>{{ recipe.isFavorite ? '★' : '☆' }}</span>
+              </button>
             </div>
             <RecipeTags :tags="recipe.tags" />
           </div>
@@ -251,5 +267,23 @@ p[style*='color: red;'] {
 }
 .filter-clear-btn:hover {
   color: var(--danger-color);
+}
+
+.btn-fav {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  margin-left: 0.5rem;
+  color: var(--text-light);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+.btn-fav:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+.btn-fav.is-loading {
+  opacity: 0.6;
+  cursor: progress;
 }
 </style>
