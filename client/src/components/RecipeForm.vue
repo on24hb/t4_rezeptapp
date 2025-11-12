@@ -13,7 +13,7 @@ const props = defineProps<{
 
 // --- Event ---
 const emit = defineEmits<{
-  (e: 'submit-recipe', data: Omit<Recipe, 'id' | 'userId'>): void
+  (e: 'submit-recipe', data: Omit<Recipe, 'id' | 'userId' | 'isFavorite'>): void
 }>()
 
 const title = ref('')
@@ -72,7 +72,7 @@ async function handleSubmit() {
   }
 
   // Datenobjekt für das neue Rezept
-  const recipeData: Omit<Recipe, 'id' | 'userId'> = {
+  const recipeData: Omit<Recipe, 'id' | 'userId' | 'isFavorite'> = {
     title: title.value,
     ingredients: ingredientsArray,
     instructions: instructions.value.trim(),

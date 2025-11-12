@@ -53,7 +53,7 @@ async function toggleFavorite(recipeId: string) {
         @change="handleAddFilter"
         class="filter-select"
       >
-        <option value="" disabled selected>Filter hinzufügen...</option>
+        <option value="" disabled selected>Filter hinzufügen... ▼</option>
         <option v-for="tag in availableTagsForDropdown" :key="tag.name" :value="tag.name">
           {{ tag.name }}
         </option>
@@ -248,8 +248,13 @@ p[style*='color: red;'] {
   background-color: var(--card-background);
   color: var(--text-light);
   cursor: pointer;
-  height: 1.7rem;
+  height: 1.8rem;
+
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
+
 .filter-select:focus {
   outline-color: var(--primary-color);
 }

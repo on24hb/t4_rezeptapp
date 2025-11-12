@@ -11,10 +11,11 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 
 // Funktion, die auf das Event vom Formular reagiert
-async function handleCreate(recipeData: Omit<Recipe, 'id' | 'userId'>) {
+async function handleCreate(recipeData: Omit<Recipe, 'id' | 'userId' | 'isFavorite'>) {
   isLoading.value = true
   error.value = null
-  const success = await recipeStore.addRecipe(recipeData) // Store-Action aufrufen
+
+  const success = await recipeStore.addRecipe({ ...recipeData, isFavorite: false })
   isLoading.value = false
 
   if (success) {

@@ -32,13 +32,14 @@ onMounted(async () => {
 })
 
 // Funktion, die aufgerufen wird, wenn das Formular gespeichert wird
-async function handleUpdate(updatedData: Omit<Recipe, 'id' | 'userId'>) {
+async function handleUpdate(updatedData: Omit<Recipe, 'id' | 'userId' | 'isFavorite'>) {
   if (!recipeToEdit.value) return
 
   isLoading.value = true
   error.value = null
 
-  const success = await recipeStore.updateRecipeAction(props.id, updatedData)
+  const payload = { ...updatedData, isFavorite: recipeToEdit.value.isFavorite }
+  const success = await recipeStore.updateRecipeAction(props.id, payload)
 
   if (success) {
     router.push({ name: 'recipe-detail' })
@@ -68,6 +69,11 @@ async function handleUpdate(updatedData: Omit<Recipe, 'id' | 'userId'>) {
 </template>
 
 <style scoped>
+h2 {
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+}
+
 .edit-recipe-view {
   max-width: 600px;
   margin: 2rem auto;
