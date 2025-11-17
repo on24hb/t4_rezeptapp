@@ -3,13 +3,17 @@ import { RouterView } from 'vue-router'
 import { useAuthStore } from './stores/AuthStore'
 
 const authStore = useAuthStore()
+
+function handleLogout() {
+  void authStore.logout(true)
+}
 </script>
 
 <template>
   <header>
     <div class="header-content">
       <h1>MealMate</h1>
-      <button v-if="authStore.isLoggedIn" @click="authStore.logout()" class="logout-button">
+      <button v-if="authStore.isLoggedIn" @click="handleLogout" class="logout-button">
         Logout
       </button>
     </div>

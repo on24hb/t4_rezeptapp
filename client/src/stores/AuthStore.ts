@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { jwtDecode } from 'jwt-decode' // Hilfsbibliothek zum einfachen Dekodieren des Tokens
-import router from '../router/index.ts'
 
 interface JwtPayload {
   userId: string
@@ -24,7 +23,6 @@ export const useAuthStore = defineStore('auth', () => {
         return decoded.userId
       } catch (error) {
         console.error('Fehler beim Dekodieren des JWT:', error)
-        logout()
         return null
       }
     }
@@ -36,7 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Sendet Login-Anfrage an das Backend und speichert das Token bei Erfolg
    * @param username
-   * @param password
+   * @param passworda
    * @returns
    */
   async function login(username: string, password: string): Promise<boolean> {
@@ -74,13 +72,23 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * Entfernt das Token aus dem State und localStorage.
+   * Wenn navigate=true, wird dynamisch der Router importiert und zur Login-Seite navigiert.
    */
-  function logout() {
+  async function logout(navigate = false): Promise<void> {
     token.value = null
     localStorage.removeItem('authToken')
     loginError.value = null
-    console.log('Ausgeloggt, leite zu /login weiter...')
-    router.push({ name: 'login' })
+    console.log('Ausgeloggt' + (navigate ? ', leite zu /login weiter...' : ''))
+
+    if (navigate) {
+      try {
+        const routerModule = await import('../router/index.ts')
+        const router = routerModule.default as import('vue-router').Router
+        router.push({ name: 'login' })
+      } catch (err) {
+        console.error('Fehler beim dynamischen Import des Routers:', err)
+      }
+    }
   }
 
   // --- Return ---

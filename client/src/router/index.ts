@@ -57,6 +57,13 @@ const router = createRouter({
 router.beforeEach(
   (to: RouteLocationNormalized, _from: RouteLocationNormalized, next: NavigationGuardNext) => {
     const authStore = getAuthStore()
+
+    // Abgelaufenes Token beim Seitenaufruf erkennen
+    if (authStore.isLoggedIn && authStore.userId === null) {
+      console.warn('Ungültiges/Abgelaufenes Token gefunden. Erzwinge Logout.')
+      void authStore.logout(false)
+    }
+
     const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
 
     if (requiresAuth && !authStore.isLoggedIn) {
