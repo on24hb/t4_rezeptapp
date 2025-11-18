@@ -1,4 +1,4 @@
-import { Application, Router, type RouterContext } from "oak";
+import { Application, Router, type RouterContext, send } from "oak";
 import { loginHandler, jwtMiddleware } from "./auth.ts";
 import {
   getRecipesByUser,
@@ -46,11 +46,6 @@ app.use(async (ctx, next) => {
 app.use(async (ctx, next) => {
   console.log(`${ctx.request.method} ${ctx.request.url.pathname}`);
   await next();
-});
-
-// Test-Route
-router.get("/", (ctx) => {
-  ctx.response.body = "Hallo Rezept-App!";
 });
 
 // Login-Route für POST-Anfragen
@@ -326,7 +321,7 @@ const deleteRecipeHandler = async (
 router.delete("/api/recipes/:id", jwtMiddleware, deleteRecipeHandler);
 
 const favoriteRecipeHandler = async (
-  ctx: RouterContext<"/api/recipes/:id/favorite", { id: string }, AppState>,
+  ctx: RouterContext<"/api/recipes/:id/favorite", { id: string }, AppState>
 ) => {
   try {
     const userId = ctx.state.user?.userId;
@@ -339,23 +334,68 @@ const favoriteRecipeHandler = async (
 
     if (updatedRecipe) {
       ctx.response.body = updatedRecipe;
-      ctx.response.status = 200; 
-      console.log(`Rezept ${recipeId} Favoriten-Status für User ${userId} umgeschaltet.`);
+      ctx.response.status = 200;
+      console.log(
+        `Rezept ${recipeId} Favoriten-Status für User ${userId} umgeschaltet.`
+      );
     } else {
       ctx.response.status = 404;
-      ctx.response.body = { message: `Rezept mit ID '${recipeId}' nicht gefunden oder Zugriff verweigert.` };
+      ctx.response.body = {
+        message: `Rezept mit ID '${recipeId}' nicht gefunden oder Zugriff verweigert.`,
+      };
     }
   } catch (err) {
-    console.error("Fehler im favoriteRecipeHandler:", err);}
+    console.error("Fehler im favoriteRecipeHandler:", err);
+  }
 };
 
 router.patch("/api/recipes/:id/favorite", jwtMiddleware, favoriteRecipeHandler);
 
-// App Start
 app.use(router.routes());
 app.use(router.allowedMethods());
 
+// Statische Dateien ausliefern
+app.use(async (ctx, next) => {
+  const path = ctx.request.url.pathname;
+
+  // API-Calls sollen nicht hier behandelt werden
+  if (path.startsWith("/api")) {
+    await next();
+    return;
+  }
+
+  try {
+    await send(ctx, path, {
+      root: `${Deno.cwd()}/public`,
+      index: "index.html",
+    });
+  } catch {
+    // Wenn Datei nicht gefunden, weiter zur nächsten Middleware (SPA Fallback)
+    await next();
+  }
+});
+
+// SPA Fallback
+// Fängt alle Routen ab, die nicht gefunden wurden, und liefert index.html
+app.use(async (ctx) => {
+  const path = ctx.request.url.pathname;
+
+  if (path.match(/\.(js|css|png|jpg|ico|json)$/)) {
+    ctx.response.status = 404;
+    ctx.response.body = "Not found";
+    return;
+  }
+
+  // Ansonsten immer die index.html senden
+  await send(ctx, "/", {
+    root: `${Deno.cwd()}/public`,
+    index: "index.html",
+  });
+});
+
+// App Start
 console.log("Server wird gestartet...");
+console.log(`Root Verzeichnis: ${Deno.cwd()}/public`); // Zur Kontrolle beim Start
 
 console.log("Server läuft auf https://localhost:8000");
 await app.listen({
