@@ -9,6 +9,7 @@ import {
   toggleFavoriteStatus,
 } from "./recipe.ts";
 import { type JWTPayload } from "jose";
+import { seedDatabase } from "./seed.ts";
 
 interface AppState {
   user?: JWTPayload & { userId: string };
@@ -395,11 +396,24 @@ app.use(async (ctx) => {
 
 // App Start
 console.log("Server wird gestartet...");
-console.log(`Root Verzeichnis: ${Deno.cwd()}/public`); // Zur Kontrolle beim Start
+const certFile = "./localhost.pem";
+const keyFile = "./localhost-key.pem";
 
-console.log("Server läuft auf https://localhost:8000");
-await app.listen({
-  port: 8000,
-  cert: await Deno.readTextFile("./localhost.pem"),
-  key: await Deno.readTextFile("./localhost-key.pem"),
-});
+let options: any = { port: 8000 };
+
+try {
+  // Prüfen, ob Zertifikate existieren
+  const cert = await Deno.readTextFile(certFile);
+  const key = await Deno.readTextFile(keyFile);
+  options = { ...options, cert, key }; // HTTPS aktivieren
+  console.log("Zertifikate gefunden. Server läuft auf HTTPS://localhost:8000");
+} catch (e) {
+  console.log(
+    "Keine Zertifikate gefunden (oder Fehler beim Lesen). Starte im HTTP-Modus."
+  );
+  console.log("Server läuft auf HTTP://localhost:8000");
+}
+
+await seedDatabase();
+
+await app.listen(options);
