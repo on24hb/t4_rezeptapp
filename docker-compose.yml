@@ -5,4 +5,4 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    container_name: rezeptapp_broska
+    container_name: t5_rezeptapp_broska
