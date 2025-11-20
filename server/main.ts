@@ -402,16 +402,15 @@ const keyFile = "./localhost-key.pem";
 let options: any = { port: 8000 };
 
 try {
-  // Prüfen, ob Zertifikate existieren
   const cert = await Deno.readTextFile(certFile);
   const key = await Deno.readTextFile(keyFile);
   options = { ...options, cert, key }; // HTTPS aktivieren
   console.log("Zertifikate gefunden. Server läuft auf HTTPS://localhost:8000");
 } catch (e) {
-  console.log(
-    "Keine Zertifikate gefunden (oder Fehler beim Lesen). Starte im HTTP-Modus."
+  console.error(
+    "Keine Zertifikate gefunden (oder Fehler beim Lesen). HTTPS ist erforderlich. Beende."
   );
-  console.log("Server läuft auf HTTP://localhost:8000");
+  Deno.exit(1);
 }
 
 await seedDatabase();

@@ -6,7 +6,7 @@ Eine Webanwendung zur Verwaltung persönlicher Rezepte, entwickelt mit **Vue.js 
 
 ## Schnellstart (Empfohlen: Docker)
 
-Die Anwendung ist als "Self-Contained"-Container konzipiert.
+Die Anwendung ist als Docker Container konzipiert.
 
 **Voraussetzung:** Docker Desktop ist installiert und läuft.
 
